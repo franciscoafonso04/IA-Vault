@@ -72,7 +72,7 @@ def draw_main_menu(screen, font):
     screen.blit(container_surface, (container_x, container_y))
     
     # Title styling - CORRIGIDO: posicionado dentro do container
-    title_font = pygame.font.SysFont('Arial', 32, bold=True)
+    title_font = pygame.font.Font(None, 40)  # Fonte maior e mais elegante
     title_text = 'Wedding Seating Planner'
     title = title_font.render(title_text, True, (70, 100, 180))
     # Ajustado para ficar dentro do container
@@ -167,7 +167,7 @@ def main():
     pygame.display.set_caption('Wedding Seating Planner')
 
     # Configuração da fonte
-    font = pygame.font.SysFont('Arial', 24)
+    font = pygame.font.Font(None, 28)  # Fonte mais elegante
 
     # Lê as preferências do CSV
     filename = 'IA-Vault/convidados.csv'  # Substituir pelo caminho do seu ficheiro

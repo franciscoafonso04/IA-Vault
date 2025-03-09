@@ -1,0 +1,9 @@
+Guest,Together1,Together2,Together3,Apart1,Apart2,Apart3
+Alice,Bob,Charlie,David,Eve,Frank,Grace
+Bob,Alice,David,,Charlie,,Eve
+Charlie,Alice,Bob,,David,,Frank
+David,Charlie,Alice,,Eve,,Grace
+Eve,Frank,Alice,,Bob,,David
+Frank,Grace,Eve,,Alice,,Bob
+Grace,Frank,Alice,,Charlie,,David
+

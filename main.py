@@ -1,316 +1,51 @@
 import pygame
-import csv
-import random
-import math
+import file_handler
+import seater
+import ui
 
-# Função para ler o ficheiro CSV
-def read_guest_preferences(filename):
-    guests = {}
-    
-    with open(filename, newline='', encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            name = row['Guest'].strip()
-            prefers = [row[f'Together{i}'].strip() for i in range(1, 4) if row.get(f'Together{i}') and row[f'Together{i}'].strip()]
-            avoids = [row[f'Apart{i}'].strip() for i in range(1, 4) if row.get(f'Apart{i}') and row[f'Apart{i}'].strip()]
-            
-            guests[name] = {
-                'prefers': prefers,
-                'avoids': avoids
-            }
-    
-    return guests
+pygame.init()
 
-# Função para desenhar a tabela no Pygame
-def draw_table(screen, data, font, row_height, col_widths):
-    # Título das colunas
-    headers = ['Guest', 'Prefers', 'Avoids']
-    for col, header in enumerate(headers):
-        pygame.draw.rect(screen, (100, 149, 237), (col * col_widths[col], 20, col_widths[col], row_height))  # Azul suave
-        text = font.render(header, True, (255, 255, 255))
-        screen.blit(text, (col * col_widths[col] + 10, 20 + 10))  # Texto branco
-    
-    # Preencher com os dados
-    y_offset = 60  # Começar um pouco abaixo do título
-    for guest, preferences in data.items():
-        # Desenhar o nome do convidado
-        pygame.draw.rect(screen, (255, 255, 255), (0, y_offset, col_widths[0], row_height))
-        text = font.render(guest, True, (0, 0, 0))
-        screen.blit(text, (10, y_offset + 10))
-        
-        # Desenhar as preferências
-        prefer_text = ', '.join(preferences['prefers']) if preferences['prefers'] else "None"
-        pygame.draw.rect(screen, (255, 255, 255), (col_widths[0], y_offset, col_widths[1], row_height))
-        text = font.render(prefer_text, True, (0, 0, 0))
-        screen.blit(text, (col_widths[0] + 10, y_offset + 10))
-        
-        # Desenhar as evitações
-        avoid_text = ', '.join(preferences['avoids']) if preferences['avoids'] else "None"
-        pygame.draw.rect(screen, (255, 255, 255), (col_widths[0] + col_widths[1], y_offset, col_widths[2], row_height))
-        text = font.render(avoid_text, True, (0, 0, 0))
-        screen.blit(text, (col_widths[0] + col_widths[1] + 10, y_offset + 10))
-        
-        y_offset += row_height
+SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
+MENU, VIEW_PREFERENCES, VIEW_SEATING = "menu", "preferences", "seating"
+state = MENU
 
-# Função para desenhar o menu principal
-def draw_main_menu(screen, font):
-    # Create a gradient background
-    for y in range(screen.get_height()):
-        # Gradient from light blue to slightly darker blue
-        color = (240 - y // 20, 248 - y // 30, 255 - y // 40)
-        pygame.draw.line(screen, color, (0, y), (screen.get_width(), y))
-    
-    # Menu container
-    container_width = 400
-    container_height = 350
-    container_x = (screen.get_width() - container_width) // 2
-    container_y = (screen.get_height() - container_height) // 2 - 30
-    
-    # Draw a semi-transparent rounded container
-    container_surface = pygame.Surface((container_width, container_height), pygame.SRCALPHA)
-    pygame.draw.rect(container_surface, (255, 255, 255, 200), 
-                    (0, 0, container_width, container_height), 
-                    border_radius=20)
-    screen.blit(container_surface, (container_x, container_y))
-    
-    # Title styling - CORRIGIDO: posicionado dentro do container
-    title_font = pygame.font.Font(None, 40)  # Fonte maior e mais elegante
-    title_text = 'Wedding Seater Planner'
-    title = title_font.render(title_text, True, (70, 100, 180))
-    # Ajustado para ficar dentro do container
-    title_rect = title.get_rect(center=(container_x + container_width // 2, container_y + 45))
-    screen.blit(title, title_rect)
-    
-    # Decorative divider
-    pygame.draw.line(screen, (200, 200, 220), 
-                    (container_x + 50, container_y + 90), 
-                    (container_x + container_width - 50, container_y + 90), 
-                    3)
-    
-    # Button styling
-    button_width = 320
-    button_height = 60
-    start_x = (screen.get_width() - button_width) // 2
-    
-    # First button - Get Best Seating
-    button_y = container_y + 130
-    button1_rect = pygame.Rect(start_x, button_y, button_width, button_height)
-    
-    # Button shadow effect
-    shadow_surface = pygame.Surface((button_width, button_height), pygame.SRCALPHA)
-    pygame.draw.rect(shadow_surface, (0, 0, 0, 50), 
-                    (0, 0, button_width, button_height), 
-                    border_radius=15)
-    screen.blit(shadow_surface, (start_x + 3, button_y + 3))
-    
-    # Actual button with gradient
-    button_surface = pygame.Surface((button_width, button_height), pygame.SRCALPHA)
-    for y in range(button_height):
-        # Gradient from darker to lighter green
-        color = (80 + y // 2, 180 + y // 3, 80 + y // 2, 255)
-        pygame.draw.line(button_surface, color, (0, y), (button_width, y))
-    
-    pygame.draw.rect(button_surface, (0, 0, 0, 0), 
-                    (0, 0, button_width, button_height), 
-                    border_radius=15, width=2)
-    screen.blit(button_surface, (start_x, button_y))
-    
-    # Button text
-    btn_text = font.render('Get Seating Arrangement', True, (255, 255, 255))
-    btn_rect = btn_text.get_rect(center=(start_x + button_width // 2, button_y + button_height // 2))
-    screen.blit(btn_text, btn_rect)
-    
-    # Second button - View Preferences
-    button_y = container_y + 210
-    button2_rect = pygame.Rect(start_x, button_y, button_width, button_height)
-    
-    # Button shadow
-    screen.blit(shadow_surface, (start_x + 3, button_y + 3))
-    
-    # Actual button with gradient
-    button_surface2 = pygame.Surface((button_width, button_height), pygame.SRCALPHA)
-    for y in range(button_height):
-        # Gradient from darker to lighter blue
-        color = (80 + y // 2, 120 + y // 3, 210 + y // 2, 255)
-        pygame.draw.line(button_surface2, color, (0, y), (button_width, y))
-    
-    pygame.draw.rect(button_surface2, (0, 0, 0, 0), 
-                    (0, 0, button_width, button_height), 
-                    border_radius=15, width=2)
-    screen.blit(button_surface2, (start_x, button_y))
-    
-    # Button text
-    btn_text = font.render('View Preferences Table', True, (255, 255, 255))
-    btn_rect = btn_text.get_rect(center=(start_x + button_width // 2, button_y + button_height // 2))
-    screen.blit(btn_text, btn_rect)
-    
-    # Add decorative wedding icons
-    # Simple ring icons (circles)
-    ring_x1 = container_x + 60
-    ring_x2 = container_x + container_width - 60
-    ring_y = container_y + 300
-    
-    # Left ring
-    pygame.draw.circle(screen, (255, 215, 0), (ring_x1, ring_y), 15, width=3)
-    # Right ring
-    pygame.draw.circle(screen, (255, 215, 0), (ring_x2, ring_y), 15, width=3)
-    
-    # Return button information for click detection
-    return button1_rect, button2_rect
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Wedding Seater Planner")
+font = pygame.font.Font(None, 28)  
 
-def calculate_tables_needed(num_guests, seats_per_table=6):
-    return math.ceil(num_guests / seats_per_table)
+guests = file_handler.read_guest_preferences("IA-Vault/guest_list.csv")
+tables = seater.create_random_seating(guests)
 
-def create_random_seating(guests, min_per_table=4, max_per_table=6):
-    guest_list = list(guests.keys())
-    total_guests = len(guest_list)
+# Loop principal
+running = True
+while running:
+    screen.fill((255, 255, 255))  # Fundo branco
     
-    # Calculate optimal number of tables
-    # Try to maximize table usage while keeping tables within min-max limits
-    num_tables = max(2, total_guests // ((min_per_table + max_per_table) // 2))
-    
-    # Verify if we can reduce number of tables
-    while num_tables > 2:
-        guests_per_table = math.ceil(total_guests / (num_tables - 1))
-        if guests_per_table <= max_per_table:
-            num_tables -= 1
-        else:
-            break
-    
-    # Calculate final distribution
-    base_guests_per_table = total_guests // num_tables
-    extra_guests = total_guests % num_tables
-    
-    # Create and fill tables
-    tables = [[] for _ in range(num_tables)]
-    random.shuffle(guest_list)
-    guest_index = 0
-    
-    for table_index in range(num_tables):
-        guests_for_this_table = base_guests_per_table + (1 if table_index < extra_guests else 0)
-        tables[table_index] = guest_list[guest_index:guest_index + guests_for_this_table]
-        guest_index += guests_for_this_table
-    
-    return tables
+    # Draw current state and get button areas
+    if state == MENU:
+        button1_rect, button2_rect = ui.draw_main_menu(screen, font)
+    elif state == VIEW_PREFERENCES:
+        back_button = ui.draw_table(screen, guests, font, row_height=40, col_widths=[200, 200, 200])
+    elif state == VIEW_SEATING:
+        back_button = ui.draw_seating_arrangement(screen, tables, font)
 
-def draw_seating_arrangement(screen, tables, font):
-    screen.fill((240, 248, 255))
-    
-    # Draw title
-    title = font.render('Random Seating Arrangement', True, (0, 0, 0))
-    screen.blit(title, (20, 20))
-    
-    # Draw tables
-    y_offset = 80
-    for i, table in enumerate(tables):
-        # Draw table header
-        table_text = f"Table {i + 1}"
-        text = font.render(table_text, True, (0, 0, 0))
-        screen.blit(text, (20, y_offset))
-        
-        # Draw guests at this table
-        for j, guest in enumerate(table):
-            guest_text = font.render(f"  • {guest}", True, (0, 0, 0))
-            screen.blit(guest_text, (40, y_offset + 30 + j * 25))
-        
-        y_offset += 30 + len(table) * 25 + 20
-    
-    # Draw back button
-    back_button = pygame.draw.rect(screen, (255, 99, 71), 
-                                 (10, screen.get_height() - 60, 100, 40), 
-                                 border_radius=10)
-    text = font.render('Back', True, (255, 255, 255))
-    text_rect = text.get_rect(center=(10 + 100 // 2, screen.get_height() - 40))
-    screen.blit(text, text_rect)
-    
-    return back_button
+    # Handle events
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_pos = event.pos
+            if state == MENU:
+                if button1_rect.collidepoint(mouse_pos):
+                    tables = seater.create_random_seating(guests)
+                    state = VIEW_SEATING
+                elif button2_rect.collidepoint(mouse_pos):
+                    state = VIEW_PREFERENCES
+            elif state in (VIEW_PREFERENCES, VIEW_SEATING):
+                if back_button.collidepoint(mouse_pos):
+                    state = MENU
 
-# Função principal do programa
-def main():
-    pygame.init()
-    
-    # Configuração da tela
-    screen_width = 800  # Increased screen size for better aesthetics
-    screen_height = 600
-    screen = pygame.display.set_mode((screen_width, screen_height))
-    pygame.display.set_caption('Wedding Seater Planner')
+    pygame.display.flip()
 
-    # Configuração da fonte
-    font = pygame.font.Font(None, 28)  # Fonte mais elegante
+pygame.quit()
 
-    # Lê as preferências do CSV
-    filename = 'IA-Vault/convidados.csv'  # Substituir pelo caminho do seu ficheiro
-    guest_preferences = read_guest_preferences(filename)
-
-    # Parâmetros de visualização
-    row_height = 40
-    col_widths = [200, 200, 200]  # Largura das colunas
-
-    # Tela inicial do menu
-    in_menu = True
-    in_table_view = False
-
-    # Variables for seating view
-    in_seating_view = False
-    seating_arrangement = None
-
-    # Loop principal
-    running = True
-    while running:
-        if in_menu:
-            # Desenhar o menu
-            button1_rect, button2_rect = draw_main_menu(screen, font)
-
-            # Verificar cliques no menu
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    mouse_pos = event.pos
-                    # Verificar se o botão de obter a melhor disposição foi clicado
-                    if button1_rect.collidepoint(mouse_pos):
-                        seating_arrangement = create_random_seating(guest_preferences)
-                        in_seating_view = True
-                        in_menu = False
-                    # Verificar se o botão de ver a tabela foi clicado
-                    elif button2_rect.collidepoint(mouse_pos):
-                        in_table_view = True
-                        in_menu = False
-
-        elif in_table_view:
-            # Desenhar a tabela de preferências
-            screen.fill((240, 248, 255))  # Cor de fundo suave para a tela da tabela
-            draw_table(screen, guest_preferences, font, row_height, col_widths)
-
-            # Retornar ao menu principal
-            back_button = pygame.draw.rect(screen, (255, 99, 71), (10, screen_height - 60, 100, 40), border_radius=10)  # Botão vermelho
-            text = font.render('Back', True, (255, 255, 255))
-            text_rect = text.get_rect(center=(10 + 100 // 2, screen_height - 40))  # Centralizar texto no botão de voltar
-            screen.blit(text, text_rect)
-            
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if back_button.collidepoint(event.pos):
-                        in_menu = True
-                        in_table_view = False
-
-        elif in_seating_view:
-            back_button = draw_seating_arrangement(screen, seating_arrangement, font)
-            
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if back_button.collidepoint(event.pos):
-                        in_menu = True
-                        in_seating_view = False
-
-        pygame.display.flip()
-
-    pygame.quit()
-
-# Iniciar o programa
-if __name__ == '__main__':
-    main()

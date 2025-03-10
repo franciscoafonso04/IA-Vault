@@ -1,5 +1,7 @@
 import pygame
 import csv
+import random
+import math
 
 # Função para ler o ficheiro CSV
 def read_guest_preferences(filename):
@@ -73,7 +75,7 @@ def draw_main_menu(screen, font):
     
     # Title styling - CORRIGIDO: posicionado dentro do container
     title_font = pygame.font.Font(None, 40)  # Fonte maior e mais elegante
-    title_text = 'Wedding Seating Planner'
+    title_text = 'Wedding Seater Planner'
     title = title_font.render(title_text, True, (70, 100, 180))
     # Ajustado para ficar dentro do container
     title_rect = title.get_rect(center=(container_x + container_width // 2, container_y + 45))
@@ -114,7 +116,7 @@ def draw_main_menu(screen, font):
     screen.blit(button_surface, (start_x, button_y))
     
     # Button text
-    btn_text = font.render('Get Best Seating Arrangement', True, (255, 255, 255))
+    btn_text = font.render('Get Seating Arrangement', True, (255, 255, 255))
     btn_rect = btn_text.get_rect(center=(start_x + button_width // 2, button_y + button_height // 2))
     screen.blit(btn_text, btn_rect)
     
@@ -156,6 +158,73 @@ def draw_main_menu(screen, font):
     # Return button information for click detection
     return button1_rect, button2_rect
 
+def calculate_tables_needed(num_guests, seats_per_table=6):
+    return math.ceil(num_guests / seats_per_table)
+
+def create_random_seating(guests, min_per_table=4, max_per_table=6):
+    guest_list = list(guests.keys())
+    total_guests = len(guest_list)
+    
+    # Calculate optimal number of tables
+    # Try to maximize table usage while keeping tables within min-max limits
+    num_tables = max(2, total_guests // ((min_per_table + max_per_table) // 2))
+    
+    # Verify if we can reduce number of tables
+    while num_tables > 2:
+        guests_per_table = math.ceil(total_guests / (num_tables - 1))
+        if guests_per_table <= max_per_table:
+            num_tables -= 1
+        else:
+            break
+    
+    # Calculate final distribution
+    base_guests_per_table = total_guests // num_tables
+    extra_guests = total_guests % num_tables
+    
+    # Create and fill tables
+    tables = [[] for _ in range(num_tables)]
+    random.shuffle(guest_list)
+    guest_index = 0
+    
+    for table_index in range(num_tables):
+        guests_for_this_table = base_guests_per_table + (1 if table_index < extra_guests else 0)
+        tables[table_index] = guest_list[guest_index:guest_index + guests_for_this_table]
+        guest_index += guests_for_this_table
+    
+    return tables
+
+def draw_seating_arrangement(screen, tables, font):
+    screen.fill((240, 248, 255))
+    
+    # Draw title
+    title = font.render('Random Seating Arrangement', True, (0, 0, 0))
+    screen.blit(title, (20, 20))
+    
+    # Draw tables
+    y_offset = 80
+    for i, table in enumerate(tables):
+        # Draw table header
+        table_text = f"Table {i + 1}"
+        text = font.render(table_text, True, (0, 0, 0))
+        screen.blit(text, (20, y_offset))
+        
+        # Draw guests at this table
+        for j, guest in enumerate(table):
+            guest_text = font.render(f"  • {guest}", True, (0, 0, 0))
+            screen.blit(guest_text, (40, y_offset + 30 + j * 25))
+        
+        y_offset += 30 + len(table) * 25 + 20
+    
+    # Draw back button
+    back_button = pygame.draw.rect(screen, (255, 99, 71), 
+                                 (10, screen.get_height() - 60, 100, 40), 
+                                 border_radius=10)
+    text = font.render('Back', True, (255, 255, 255))
+    text_rect = text.get_rect(center=(10 + 100 // 2, screen.get_height() - 40))
+    screen.blit(text, text_rect)
+    
+    return back_button
+
 # Função principal do programa
 def main():
     pygame.init()
@@ -164,7 +233,7 @@ def main():
     screen_width = 800  # Increased screen size for better aesthetics
     screen_height = 600
     screen = pygame.display.set_mode((screen_width, screen_height))
-    pygame.display.set_caption('Wedding Seating Planner')
+    pygame.display.set_caption('Wedding Seater Planner')
 
     # Configuração da fonte
     font = pygame.font.Font(None, 28)  # Fonte mais elegante
@@ -181,6 +250,10 @@ def main():
     in_menu = True
     in_table_view = False
 
+    # Variables for seating view
+    in_seating_view = False
+    seating_arrangement = None
+
     # Loop principal
     running = True
     while running:
@@ -196,7 +269,9 @@ def main():
                     mouse_pos = event.pos
                     # Verificar se o botão de obter a melhor disposição foi clicado
                     if button1_rect.collidepoint(mouse_pos):
-                        print("Otimização da disposição dos convidados será implementada aqui.")
+                        seating_arrangement = create_random_seating(guest_preferences)
+                        in_seating_view = True
+                        in_menu = False
                     # Verificar se o botão de ver a tabela foi clicado
                     elif button2_rect.collidepoint(mouse_pos):
                         in_table_view = True
@@ -220,6 +295,17 @@ def main():
                     if back_button.collidepoint(event.pos):
                         in_menu = True
                         in_table_view = False
+
+        elif in_seating_view:
+            back_button = draw_seating_arrangement(screen, seating_arrangement, font)
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if back_button.collidepoint(event.pos):
+                        in_menu = True
+                        in_seating_view = False
 
         pygame.display.flip()
 

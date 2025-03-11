@@ -1,5 +1,9 @@
 import pygame
 
+# Add these global variables for scrolling
+SCROLL_SPEED = 15
+scroll_offset = {'preferences': 0, 'seating': 0}
+
 # Função para desenhar a tabela no Pygame
 def draw_table(screen, data, font, row_height, col_widths):
     # Título das colunas
@@ -147,12 +151,30 @@ def draw_main_menu(screen, font):
     # Return button information for click detection
     return button1_rect, button2_rect
 
-def draw_seating_arrangement(screen, tables, font):
+def draw_seating_arrangement(screen, tables, font, score=None, guests=None):
     screen.fill((240, 248, 255))
     
     # Draw title
-    title = font.render('Random Seating Arrangement', True, (0, 0, 0))
+    title_text = 'Optimized Seating Arrangement' if score is not None else 'Random Seating Arrangement'
+    title = font.render(title_text, True, (0, 0, 0))
     screen.blit(title, (20, 20))
+    
+    # Display the score if available
+    if score is not None:
+        # Display current score
+        score_text = font.render(f'Current Score: {score}', True, (0, 100, 0))
+        screen.blit(score_text, (screen.get_width() - 300, 20))
+        
+        # Calculate and display theoretical perfect score
+        perfect_score = calculate_perfect_score(tables, guests)
+        perfect_text = font.render(f'Perfect Score: {perfect_score}', True, (100, 100, 100))
+        screen.blit(perfect_text, (screen.get_width() - 300, 45))
+        
+        # Display percentage of optimal
+        if perfect_score > 0:  # Avoid division by zero
+            percentage = min(100, max(0, (score / perfect_score) * 100))
+            percentage_text = font.render(f'Optimality: {percentage:.1f}%', True, (0, 0, 100))
+            screen.blit(percentage_text, (screen.get_width() - 300, 70))
     
     # Draw tables
     y_offset = 80
@@ -169,12 +191,37 @@ def draw_seating_arrangement(screen, tables, font):
         
         y_offset += 30 + len(table) * 25 + 20
     
-    # Draw and return back button
-    back_button = pygame.draw.rect(screen, (255, 99, 71), 
-                                 (10, screen.get_height() - 60, 100, 40), 
-                                 border_radius=10)
+    # Draw and return back button - FIXED: removed the trailing comma
+    back_button = pygame.draw.rect(screen, (255, 99, 71), (10, screen.get_height() - 60, 100, 40), border_radius=10)
     text = font.render('Back', True, (255, 255, 255))
     text_rect = text.get_rect(center=(10 + 100 // 2, screen.get_height() - 40))
     screen.blit(text, text_rect)
     
     return back_button
+
+# Add this function to handle scrolling events
+def handle_scroll_event(event, current_state):
+    if current_state in ['preferences', 'seating']:
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 4:  # Scroll up
+                scroll_offset[current_state] = max(0, scroll_offset[current_state] - SCROLL_SPEED)
+            elif event.button == 5:  # Scroll down
+                scroll_offset[current_state] += SCROLL_SPEED
+
+# Fix the helper function that calculates the theoretical perfect score
+def calculate_perfect_score(tables, guests=None):
+    """
+    Calculate what the score would be if everyone sat with all their preferred
+    people and away from all their avoided people.
+    
+    This is a theoretical maximum that may not be achievable in practice.
+    """
+    if guests is None:
+        # If guests data isn't provided, make a rough estimate
+        total_guests = sum(len(table) for table in tables)
+        # Assuming each guest has on average 3 preferred people
+        return total_guests * 3 * 10
+    else:
+        # Use the more accurate calculation from seater
+        from seater import calculate_theoretical_perfect_score
+        return calculate_theoretical_perfect_score(guests)

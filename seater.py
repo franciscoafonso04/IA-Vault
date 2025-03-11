@@ -1,6 +1,18 @@
 import random
 import math
 
+def calculate_cost(tables, guests):
+    cost = 0
+    for table in tables:
+        for guest in table:
+            for preferred_guest in guests[guest]['prefers']:
+                if preferred_guest in table:
+                    cost -= 1  
+            for avoided_guest in guests[guest]['avoids']:
+                if avoided_guest in table:
+                    cost += 1  
+    return cost
+
 def calculate_tables_needed(num_guests, seats_per_table=6):
     return math.ceil(num_guests / seats_per_table)
 

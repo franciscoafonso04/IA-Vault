@@ -13,7 +13,7 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Wedding Seater Planner")
 font = pygame.font.Font(None, 28)  
 
-guests = file_handler.read_guest_preferences("IA-Vault/guest_list.csv")
+guests = file_handler.read_guest_preferences("guest_list.csv")
 tables = seater.create_random_seating(guests)
 
 # Loop principal

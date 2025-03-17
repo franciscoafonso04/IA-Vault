@@ -3,15 +3,46 @@ import math
 import copy
 
 def calculate_cost(tables, guests):
+    """
+    Calculate the cost (energy) of a seating arrangement.
+    Lower cost means better arrangement.
+
+    The cost is calculated based on:
+      - Rewarding seating guests with those they prefer.
+      - Penalizing seating guests with those they want to avoid.
+      - Adding penalties for unbalanced table sizes.
+    """
+
     cost = 0
+    
+    # Check each table
     for table in tables:
         for guest in table:
-            for preferred_guest in guests[guest]['prefers']:
-                if preferred_guest in table:
-                    cost -= 1  
-            for avoided_guest in guests[guest]['avoids']:
-                if avoided_guest in table:
-                    cost += 1  
+            preferences = guests[guest]
+            
+            # Penalty for being seated with someone the guest wants to avoid.
+            cost += sum(20 for avoided in preferences['avoids'] if avoided in table)
+
+            # Reward for being seated with a preferred guest.
+            cost -= sum(10 for preferred in preferences['prefers'] if preferred in table)
+                    
+    # Add much stronger penalty for unbalanced tables.
+    table_sizes = [len(table) for table in tables]
+    if not table_sizes:
+        return cost
+    
+    avg_size = sum(table_sizes) / len(tables) if tables else 0
+    max_size = max(table_sizes)
+    min_size = min(table_sizes)
+    
+    # Extreme penalty if max and min differ by more than 1
+    if max_size - min_size > 1:
+        cost += (max_size - min_size) * 200 # Scalable Penalty
+    
+    # Normal balance penalty proportional to deviation from the average table size.
+    for size in table_sizes:
+        cost += abs(size - avg_size) * 20  # Higher penalty for unbalanced tables
+                    
     return cost
 
 def calculate_tables_needed(num_guests, seats_per_table=6):
@@ -27,60 +58,24 @@ def evaluate_seating(tables, guests):
     # Check each table
     for table in tables:
         # For each guest at this table
-        for i, guest in enumerate(table):
+        for guest in table:
             preferences = guests[guest]
             
             # Check if preferred people are at same table
-            for preferred in preferences['prefers']:
+            for preferred in preferences.get('prefers',[]):
                 if preferred in table:
                     score += 10  # High positive score for respecting "together" preferences
             
             # Check if avoided people are at same table (penalty)
-            for avoided in preferences['avoids']:
+            for avoided in preferences.get('avoids',[]):
                 if avoided in table:
                     score -= 20  # High penalty for putting people who should be apart together
     
     return score
 
-def calculate_cost(tables, guests):
-    """
-    Calculate the cost (energy) of a seating arrangement.
-    Lower cost means better arrangement.
-    """
-    cost = 0
-    
-    # Check each table
-    for table in tables:
-        for guest in table:
-            preferences = guests[guest]
-            
-            # Check if preferred people are at same table
-            for preferred in preferences['prefers']:
-                if preferred in table:
-                    cost -= 10  # Lower cost if preferred guest is present
-            
-            # Check if avoided people are at same table (penalty)
-            for avoided in preferences['avoids']:
-                if avoided in table:
-                    cost += 20  # Higher cost if avoided guest is present
-                    
-    # Add much stronger penalty for unbalanced tables
-    table_sizes = [len(table) for table in tables]
-    avg_size = sum(table_sizes) / len(tables) if tables else 0
-    max_size = max(table_sizes)
-    min_size = min(table_sizes)
-    
-    # Extreme penalty if max and min differ by more than 1
-    if max_size - min_size > 1:
-        cost += 1000  # Very high penalty to force balanced tables
-    
-    # Still add normal balance penalties
-    for size in table_sizes:
-        cost += abs(size - avg_size) * 20  # Higher penalty for unbalanced tables
-                    
-    return cost
 
-def create_neighbor(tables):
+
+def create_neighbor(tables, min_per_table, max_per_table):
     """
     Create a neighbor solution by making a small change to the current solution
     while maintaining balanced tables.
@@ -107,9 +102,15 @@ def create_neighbor(tables):
             guest_index = random.randint(0, len(new_tables[from_table]) - 1)
             guest = new_tables[from_table].pop(guest_index)
             new_tables[to_table].append(guest)
-            
+
         return new_tables
     
+    # Mantém os limites de capacidade em todas as operações
+    def is_valid_move(from_table, to_table):
+        return (
+            len(new_tables[from_table]) > min_per_table and
+            len(new_tables[to_table]) < max_per_table
+        )
     # If tables are balanced (diff ≤ 1), use normal operations
     operation = random.choice(['swap', 'move'])
     
@@ -132,23 +133,23 @@ def create_neighbor(tables):
                 new_tables[table2_index][guest2_index], new_tables[table1_index][guest1_index]
     
     elif operation == 'move' and len(new_tables) >= 2:
-        # Only allow moves that maintain balance
-        from_table = random.randint(0, len(new_tables) - 1)
+        from_table = random.randint(0, len(new_tables) - 1)     
         to_table = random.randint(0, len(new_tables) - 1)
-        
-        # Skip if tables are same or move would unbalance tables
-        if from_table == to_table or len(new_tables[from_table]) <= len(new_tables[to_table]):
-            return new_tables
-            
-        # Move a guest from larger to smaller table
-        if new_tables[from_table]:
-            guest_index = random.randint(0, len(new_tables[from_table]) - 1)
-            guest = new_tables[from_table].pop(guest_index)
-            new_tables[to_table].append(guest)
+        if from_table != to_table and new_tables[from_table]:
+           
+           # Check capacity constraints before moving:
+            if is_valid_move(from_table, to_table):
+              guest_index = random.randint(0, len(new_tables[from_table]) - 1)
+              guest = new_tables[from_table].pop(guest_index)
+              new_tables[to_table].append(guest)
+
+    # Reassures that every table respects the mins and maxs.
+    if any(len(table) < min_per_table or len(table) > max_per_table for table in new_tables):
+        return tables 
     
     return new_tables
 
-def simulated_annealing(guests, initial_temperature=100, cooling_rate=0.95, iterations=1000, min_per_table=4, max_per_table=6):
+def simulated_annealing(guests, initial_temperature=100, cooling_rate=0.97, iterations=2000, min_per_table=4, max_per_table=6, cooling_type="exponential"):
     """
     Apply simulated annealing to find an optimal seating arrangement.
     """
@@ -158,12 +159,11 @@ def simulated_annealing(guests, initial_temperature=100, cooling_rate=0.95, iter
     
     best_tables = copy.deepcopy(tables)
     best_cost = current_cost
-    
     temperature = initial_temperature
     
     for i in range(iterations):
         # Generate a neighbor solution
-        neighbor_tables = create_neighbor(tables)
+        neighbor_tables = create_neighbor(tables, min_per_table, max_per_table)
         neighbor_cost = calculate_cost(neighbor_tables, guests)
         
         # Calculate delta cost (change in cost)
@@ -186,7 +186,15 @@ def simulated_annealing(guests, initial_temperature=100, cooling_rate=0.95, iter
                 current_cost = neighbor_cost
         
         # Cool down the temperature
-        temperature *= cooling_rate
+        if cooling_type == "exponential":
+            temperature *= cooling_rate
+        elif cooling_type == "linear":
+            temperature -= initial_temperature / iterations
+        elif cooling_type == "logarithmic":
+            temperature = initial_temperature / (1 + math.log(1 + i))
+
+        if temperature < 0.01:
+            break
         
         # Optionally print progress
         if i % 100 == 0:

@@ -216,6 +216,9 @@ def create_balanced_seating(guests, min_per_table=4, max_per_table=6):
     
     # Calculate number of tables needed
     num_tables = math.ceil(total_guests / max_per_table)
+
+    if num_tables * min_per_table > len(guest_list):
+        raise ValueError("Not possible to create a disposition with those arguments.")
     
     # Calculate optimal size distribution
     ideal_size = total_guests / num_tables

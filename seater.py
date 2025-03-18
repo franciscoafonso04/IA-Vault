@@ -149,7 +149,49 @@ def create_neighbor(tables, min_per_table, max_per_table):
     
     return new_tables
 
-def simulated_annealing(guests, initial_temperature=100, cooling_rate=0.97, iterations=2000, min_per_table=4, max_per_table=6, cooling_type="exponential"):
+
+def validate_parameters(params, num_guests):
+    """
+    Validate the parameters to ensure they are logical and within acceptable ranges.
+    
+    Args:
+        params (dict): Dictionary containing the parameters.
+        num_guests (int): Total number of guests.
+    
+    Raises:
+        ValueError: If any parameter is invalid.
+    """
+    # Verifica min_per_table e max_per_table
+    if not (isinstance(params["min_per_table"], int) and params["min_per_table"] > 0):
+        raise ValueError("min_per_table must be a positive integer.")
+    if not (isinstance(params["max_per_table"], int) and params["max_per_table"] > 0):
+        raise ValueError("max_per_table must be a positive integer.")
+    if params["max_per_table"] < params["min_per_table"]:
+        raise ValueError("max_per_table must be greater than or equal to min_per_table.")
+    
+    # Verifica se o número de mesas é viável
+    min_tables_needed = math.ceil(num_guests / params["max_per_table"])
+    max_tables_needed = math.ceil(num_guests / params["min_per_table"])
+    if min_tables_needed > max_tables_needed:
+        raise ValueError("Invalid table sizes: Not possible to seat all guests with the given min_per_table and max_per_table.")
+    
+    # Verifica initial_temperature
+    if not (isinstance(params["initial_temperature"], (int, float)) and params["initial_temperature"] > 0):
+        raise ValueError("initial_temperature must be a positive number.")
+    
+    # Verifica cooling_rate
+    if not (isinstance(params["cooling_rate"], (int, float)) and 0 < params["cooling_rate"] < 1):
+        raise ValueError("cooling_rate must be between 0 and 1.")
+    
+    # Verifica iterations
+    if not (isinstance(params["iterations"], int) and params["iterations"] > 0):
+        raise ValueError("iterations must be a positive integer.")
+    
+    # Verifica cooling_type
+    if params["cooling_type"] not in ["exponential", "linear", "logarithmic"]:
+        raise ValueError("cooling_type must be 'exponential', 'linear', or 'logarithmic'.")
+    
+def simulated_annealing(guests, initial_temperature, cooling_rate, iterations, min_per_table, max_per_table, cooling_type):
     """
     Apply simulated annealing to find an optimal seating arrangement.
     """
@@ -204,10 +246,14 @@ def simulated_annealing(guests, initial_temperature=100, cooling_rate=0.97, iter
     
     # Verify final solution is balanced
     final_sizes = [len(table) for table in best_tables]
+
     print(f"Simulated annealing completed. Best cost found: {best_cost}, Table sizes: {final_sizes}")
+    for table_index, table in enumerate(best_tables):
+        print(f"Table {table_index + 1}: {table}") 
+
     return best_tables
 
-def create_balanced_seating(guests, min_per_table=4, max_per_table=6):
+def create_balanced_seating(guests, min_per_table, max_per_table):
     """
     Create a perfectly balanced initial seating arrangement
     """
@@ -298,7 +344,7 @@ def create_balanced_seating(guests, min_per_table=4, max_per_table=6):
     return best_tables
 
 # Replace create_random_seating calls with create_balanced_seating
-def create_random_seating(guests, min_per_table=4, max_per_table=6):
+def create_random_seating(guests, min_per_table, max_per_table):
     """
     Legacy function - now delegates to create_balanced_seating
     """

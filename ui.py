@@ -4,6 +4,171 @@ import pygame
 SCROLL_SPEED = 15
 scroll_offset = {'preferences': 0, 'seating': 0}
 
+# Define constraints
+MAX_INITIAL_TEMP = 100
+MAX_ITERATIONS = 2000
+MAX_COOLING_RATE = 1.0
+COOLING_TYPES = ["exponential", "linear", "logarithmic"]
+
+# Default parameters
+parameters = {
+    "min_per_table": 2,
+    "max_per_table": 8,
+    "initial_temperature": 100,
+    "cooling_rate": 0.95,
+    "iterations": 1000,
+    "cooling_type": "exponential"
+}
+
+def draw_parameters_menu(screen, font, selected_index):
+    screen.fill((240, 248, 255))
+
+    title = font.render("Adjust Seating Parameters", True, (0, 0, 0))
+    screen.blit(title, (20, 20))
+
+    labels = [
+        "Min per Table", "Max per Table", "Initial Temperature",
+        "Cooling Rate", "Iterations", "Cooling Type"
+    ]
+    
+    y_offset = 80
+    for i, (key, label) in enumerate(zip(parameters.keys(), labels)):
+        # Highlight the selected parameter
+        color = (0, 0, 255) if i == selected_index else (0, 0, 0)
+        # Display the parameter label and value
+        text = font.render(f"{label}: {parameters[key]}", True, color)
+        screen.blit(text, (50, y_offset))
+        y_offset += 40
+
+    back_text = font.render("Press ENTER to Confirm", True, (255, 0, 0))
+    screen.blit(back_text, (50, y_offset + 40))
+
+
+def handle_parameters_input(event, selected_index):
+    key = list(parameters.keys())[selected_index]  # Get the selected parameter key
+
+    if event.type == pygame.KEYDOWN:
+        if key in ["min_per_table", "max_per_table", "iterations"]:
+            if event.key == pygame.K_UP:
+                # Ensure "iterations" does not exceed its max, and "min_per_table" and "max_per_table" have reasonable limits
+                if key == "iterations":
+                    parameters[key] = min(parameters[key] + 100, MAX_ITERATIONS)
+                else:
+                    parameters[key] = min(parameters[key] + 1, 20 if key == "max_per_table" else 8)
+            elif event.key == pygame.K_DOWN:
+                if key == "iterations":
+                    parameters[key] = max(parameters[key] - 100, 100)
+                else:
+                    parameters[key] = max(parameters[key] - 1, 1)
+        elif key == "initial_temperature":
+            if event.key == pygame.K_UP:
+                parameters[key] = min(parameters[key] + 1, MAX_INITIAL_TEMP)
+            elif event.key == pygame.K_DOWN:
+                parameters[key] = max(parameters[key] - 1, 1)
+        elif key == "cooling_rate":
+            if event.key == pygame.K_UP:
+                parameters[key] = min(parameters[key] + 0.01, MAX_COOLING_RATE)
+            elif event.key == pygame.K_DOWN:
+                parameters[key] = max(parameters[key] - 0.01, 0.01)
+        elif key == "cooling_type":
+            index = COOLING_TYPES.index(parameters[key])
+            if event.key == pygame.K_UP:
+                parameters[key] = COOLING_TYPES[(index - 1) % len(COOLING_TYPES)]
+            elif event.key == pygame.K_DOWN:
+                parameters[key] = COOLING_TYPES[(index + 1) % len(COOLING_TYPES)]
+
+
+def draw_parameter_selection(screen, font, params, selected_index, input_text):
+    screen.fill((240, 248, 255))
+
+    title = font.render("Adjust Seating Parameters", True, (0, 0, 0))
+    screen.blit(title, (screen.get_width() // 2 - 100, 20))
+
+    y_offset = 80
+    input_boxes = []
+
+    labels = [
+        ("Min per Table", "min_per_table"),
+        ("Max per Table", "max_per_table"),
+        ("Initial Temperature", "initial_temperature"),
+        ("Cooling Rate", "cooling_rate"),
+        ("Iterations", "iterations"),
+        ("Cooling Type", "cooling_type")
+    ]
+
+    for idx, (label, key) in enumerate(labels):
+        # Highlight the selected parameter
+        if idx == selected_index:
+            pygame.draw.rect(screen, (173, 216, 230), (40, y_offset - 5, 400, 30))  # Light blue background for selected parameter
+        color = (0, 0, 255) if idx == selected_index else (0, 0, 0)
+        text = font.render(f"{label}: {params[key]}", True, color)
+        screen.blit(text, (50, y_offset))
+
+        # Draw input box
+        input_box = pygame.Rect(300, y_offset, 150, 30)
+        pygame.draw.rect(screen, (255, 255, 255), input_box)
+        pygame.draw.rect(screen, (0, 0, 0), input_box, 2)
+
+        # Display the current input text
+        if idx == selected_index:
+            text_surface = font.render(input_text, True, (0, 0, 0))
+            screen.blit(text_surface, (input_box.x + 5, input_box.y + 5))
+
+        input_boxes.append((input_box, key))
+        y_offset += 50
+
+    # Draw back button
+    back_button = pygame.draw.rect(screen, (255, 99, 71), (50, screen.get_height() - 60, 100, 40), border_radius=10)
+    back_text = font.render('Back', True, (255, 255, 255))
+    screen.blit(back_text, (75, screen.get_height() - 45))
+
+    # Draw start button
+    start_button = pygame.draw.rect(screen, (34, 139, 34), (screen.get_width() - 160, screen.get_height() - 60, 100, 40), border_radius=10)
+    start_text = font.render('Start', True, (255, 255, 255))
+    screen.blit(start_text, (screen.get_width() - 135, screen.get_height() - 45))
+
+    return back_button, start_button
+
+
+def handle_parameter_input(event, params, selected_index):
+    key = list(params.keys())[selected_index]
+
+    if event.key == pygame.K_UP:
+        if key == "iterations":
+            params[key] = min(params[key] + 100, 2000)
+        elif key == "cooling_rate":
+            params[key] = min(params[key] + 0.01, 1.0)
+        elif key == "initial_temperature":
+            params[key] = min(params[key] + 1, 100)
+        elif key in ["min_per_table", "max_per_table"]:
+            params[key] = min(params[key] + 1, 20)
+    elif event.key == pygame.K_DOWN:
+        if key == "iterations":
+            params[key] = max(params[key] - 100, 100)
+        elif key == "cooling_rate":
+            params[key] = max(params[key] - 0.01, 0.01)
+        elif key == "initial_temperature":
+            params[key] = max(params[key] - 1, 1)
+        elif key in ["min_per_table", "max_per_table"]:
+            params[key] = max(params[key] - 1, 1)
+    elif event.key == pygame.K_LEFT:
+        if key == "cooling_rate":
+            params[key] = max(params[key] - 0.01, 0.01)
+    elif event.key == pygame.K_RIGHT:
+        if key == "cooling_rate":
+            params[key] = min(params[key] + 0.01, 1.0)
+    elif event.key == pygame.K_1:
+        if key == "cooling_type":
+            params[key] = "exponential"
+    elif event.key == pygame.K_2:
+        if key == "cooling_type":
+            params[key] = "linear"
+    elif event.key == pygame.K_3:
+        if key == "cooling_type":
+            params[key] = "logarithmic"
+
+
+
 # Função para desenhar a tabela no Pygame
 def draw_table(screen, data, font, row_height, col_widths):
     # Título das colunas
@@ -14,7 +179,7 @@ def draw_table(screen, data, font, row_height, col_widths):
         screen.blit(text, (col * col_widths[col] + 10, 20 + 10))  # Texto branco
     
     # Preencher com os dados
-    y_offset = 60  # Começar um pouco abaixo do título
+    y_offset = 60 - scroll_offset['preferences'] # Começar um pouco abaixo do título
     for guest, preferences in data.items():
         # Desenhar o nome do convidado
         pygame.draw.rect(screen, (255, 255, 255), (0, y_offset, col_widths[0], row_height))
@@ -177,7 +342,8 @@ def draw_seating_arrangement(screen, tables, font, score=None, guests=None):
             screen.blit(percentage_text, (screen.get_width() - 300, 70))
     
     # Draw tables
-    y_offset = 80
+    y_offset = 80 - scroll_offset['seating']
+
     for i, table in enumerate(tables):
         # Draw table header
         table_text = f"Table {i + 1}"

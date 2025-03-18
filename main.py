@@ -26,13 +26,10 @@ params = {
 guests = file_handler.read_guest_preferences("guest_list.csv")
 tables = seater.create_balanced_seating(guests, params["min_per_table"], params["max_per_table"])  
 current_score = None
-selected_index = 0 
-input_text = ""
-
 
 running = True
 while running:
-    screen.fill((255, 255, 255))  # Fill the screen with white
+    screen.fill((255, 255, 255))
 
     # Draw the screen according to the current state
     if state == MENU:
@@ -42,63 +39,77 @@ while running:
     elif state == VIEW_SEATING:
         back_button = ui.draw_seating_arrangement(screen, tables, font, score=current_score, guests=guests)
     elif state == PARAMETER_SELECTION:
-        back_button, start_button = ui.draw_parameter_selection(screen, font, params, selected_index,input_text)
+        selected_index = 0
+        # Modificado para receber os botões de parâmetro
+        param_buttons, back_button, start_button = ui.draw_parameter_selection(screen, font, params,selected_index)
 
     # Process events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+            
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button in (4, 5):  # Mouse scroll wheel (scroll)
+            if event.button in (4, 5):  # Scroll wheel
                 if state == VIEW_PREFERENCES:
                     ui.handle_scroll_event(event, 'preferences')
                 elif state == VIEW_SEATING:
                     ui.handle_scroll_event(event, 'seating')
-            elif event.button == 1:  # Mouse click (button click)
+                    
+            elif event.button == 1:  # Left click
                 mouse_pos = event.pos
+                
                 if state == MENU:
                     if button1_rect.collidepoint(mouse_pos):
-                        state = PARAMETER_SELECTION  # Transition to PARAMETER_SELECTION
+                        state = PARAMETER_SELECTION
                     elif button2_rect.collidepoint(mouse_pos):
-                        state = VIEW_PREFERENCES  # Transition to VIEW_PREFERENCES
+                        state = VIEW_PREFERENCES
+                        
                 elif state == PARAMETER_SELECTION:
                     if back_button.collidepoint(mouse_pos):
-                        state = MENU  # Go back to MENU
+                        state = MENU
                     elif start_button.collidepoint(mouse_pos):
                         try:
-                            seater.validate_parameters(params,len(guests))
-                            print("Starting simulated annealing with parameters:", params)
+                            seater.validate_parameters(params, len(guests))
+                            print("Starting with parameters:", params)
                             tables = seater.simulated_annealing(
                                 guests=guests, 
-                                initial_temperature=params["initial_temperature"], 
-                                cooling_rate=params["cooling_rate"], 
-                                iterations=params["iterations"],  
+                                initial_temperature=params["initial_temperature"],
+                                cooling_rate=params["cooling_rate"],
+                                iterations=params["iterations"],
                                 cooling_type=params["cooling_type"],
-                                min_per_table=params["min_per_table"], 
+                                min_per_table=params["min_per_table"],
                                 max_per_table=params["max_per_table"]
                             )
                             current_score = -seater.calculate_cost(tables, guests)
-                            state = VIEW_SEATING  # Go to the seating view after starting
-                        except ValueError as e:
-                            print(f"Invalid parameters: {e}")
+                            state = VIEW_SEATING
                         except Exception as e:
-                            print(f"Error during simulated annealing: {e}")
+                            print(f"Error: {e}")
+                    else:
+                        # Verifica cliques nos botões de parâmetro
+                        for btn in param_buttons:
+                            rect, key, operation = btn
+                            if rect.collidepoint(mouse_pos):
+                                if key == "cooling_type":
+                                    types = ["exponential", "linear", "logarithmic"]
+                                    current_idx = types.index(params[key])
+                                    params[key] = types[(current_idx + 1) % len(types)]
+                                else:
+                                    # Define limites e passos
+                                    steps = {
+                                        "min_per_table": (1, 1, 20),
+                                        "max_per_table": (1, 1, 20),
+                                        "initial_temperature": (10, 1, 1000),
+                                        "cooling_rate": (0.01, 0.01, 1.0),
+                                        "iterations": (100, 100, 10000)
+                                    }
+                                    step, min_val, max_val = steps[key]
+                                    new_value = params[key] + (operation * step)
+                                    params[key] = max(min(new_value, max_val), min_val)
+                                    
                 elif state in (VIEW_PREFERENCES, VIEW_SEATING):
                     if back_button.collidepoint(mouse_pos):
-                        state = MENU  # Back button to MENU
+                        state = MENU
 
-        elif event.type == pygame.KEYDOWN:
-            if state == PARAMETER_SELECTION:  # When in the PARAMETER_SELECTION state
-                if event.key == pygame.K_UP:
-                    selected_index = (selected_index - 1) % len(params)  # Cycle through parameters upwards
-                elif event.key == pygame.K_DOWN:
-                    selected_index = (selected_index + 1) % len(params)  # Cycle through parameters downwards
-                elif event.key == pygame.K_RETURN:  # Enter key modifies selected parameter value
-                    ui.handle_parameter_input(event, params, selected_index)  # Modify selected parameter value
-                elif event.key == pygame.K_ESCAPE:  # Escape key to go back to the menu
-                    state = MENU  # Exit parameter selection to the menu
-
-    # Update the screen
     pygame.display.flip()
 
 pygame.quit()

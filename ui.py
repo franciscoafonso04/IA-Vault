@@ -78,57 +78,67 @@ def handle_parameters_input(event, selected_index):
                 parameters[key] = COOLING_TYPES[(index + 1) % len(COOLING_TYPES)]
 
 
-def draw_parameter_selection(screen, font, params, selected_index, input_text):
+def draw_parameter_selection(screen, font, params, selected_index):
     screen.fill((240, 248, 255))
-
     title = font.render("Adjust Seating Parameters", True, (0, 0, 0))
-    screen.blit(title, (screen.get_width() // 2 - 100, 20))
+    screen.blit(title, (20, 20))
 
-    y_offset = 80
-    input_boxes = []
-
-    labels = [
-        ("Min per Table", "min_per_table"),
-        ("Max per Table", "max_per_table"),
-        ("Initial Temperature", "initial_temperature"),
-        ("Cooling Rate", "cooling_rate"),
-        ("Iterations", "iterations"),
-        ("Cooling Type", "cooling_type")
+    y = 80
+    buttons = []
+    
+    # Configurações para cada parâmetro
+    parameters = [
+        ("Min per Table", "min_per_table", 1, 20),
+        ("Max per Table", "max_per_table", 1, 20),
+        ("Initial Temperature", "initial_temperature", 1, 1000),
+        ("Cooling Rate", "cooling_rate", 0.01, 1.0),
+        ("Iterations", "iterations", 100, 10000),
+        ("Cooling Type", "cooling_type", None, None)
     ]
 
-    for idx, (label, key) in enumerate(labels):
-        # Highlight the selected parameter
-        if idx == selected_index:
-            pygame.draw.rect(screen, (173, 216, 230), (40, y_offset - 5, 400, 30))  # Light blue background for selected parameter
-        color = (0, 0, 255) if idx == selected_index else (0, 0, 0)
-        text = font.render(f"{label}: {params[key]}", True, color)
-        screen.blit(text, (50, y_offset))
+    for idx, (label, key, min_val, max_val) in enumerate(parameters):
+        # Desenha o rótulo
+        text = font.render(f"{label}:", True, (0, 0, 0))
+        screen.blit(text, (50, y))
 
-        # Draw input box
-        input_box = pygame.Rect(300, y_offset, 150, 30)
-        pygame.draw.rect(screen, (255, 255, 255), input_box)
-        pygame.draw.rect(screen, (0, 0, 0), input_box, 2)
+        # Desenha o valor atual
+        value_rect = pygame.Rect(250, y, 150, 30)
+        pygame.draw.rect(screen, (255, 255, 255), value_rect)
+        pygame.draw.rect(screen, (0, 0, 0), value_rect, 2)
+        
+        value_text = font.render(str(params[key]), True, (0, 0, 0))
+        screen.blit(value_text, (260, y + 5))
 
-        # Display the current input text
-        if idx == selected_index:
-            text_surface = font.render(input_text, True, (0, 0, 0))
-            screen.blit(text_surface, (input_box.x + 5, input_box.y + 5))
+        # Botões de incremento/decremento para valores numéricos
+        if key != "cooling_type":
+            dec_button = pygame.draw.rect(screen, (200, 200, 200), (200, y, 40, 30))
+            dec_text = font.render("-", True, (0, 0, 0))
+            screen.blit(dec_text, (212, y))
 
-        input_boxes.append((input_box, key))
-        y_offset += 50
+            inc_button = pygame.draw.rect(screen, (200, 200, 200), (410, y, 40, 30))
+            inc_text = font.render("+", True, (0, 0, 0))
+            screen.blit(inc_text, (422, y))
 
-    # Draw back button
-    back_button = pygame.draw.rect(screen, (255, 99, 71), (50, screen.get_height() - 60, 100, 40), border_radius=10)
-    back_text = font.render('Back', True, (255, 255, 255))
-    screen.blit(back_text, (75, screen.get_height() - 45))
+            buttons.append((dec_button, key, -1))
+            buttons.append((inc_button, key, 1))
+        else:
+            # Botão de alternância para cooling type
+            cycle_button = pygame.draw.rect(screen, (200, 200, 200), (200, y, 250, 30))
+            current_type = params[key]
+            type_text = font.render(f"Change Type ({current_type})", True, (0, 0, 0))
+            screen.blit(type_text, (210, y))
+            buttons.append((cycle_button, key, None))
 
-    # Draw start button
-    start_button = pygame.draw.rect(screen, (34, 139, 34), (screen.get_width() - 160, screen.get_height() - 60, 100, 40), border_radius=10)
-    start_text = font.render('Start', True, (255, 255, 255))
-    screen.blit(start_text, (screen.get_width() - 135, screen.get_height() - 45))
+        y += 50
 
-    return back_button, start_button
+    # Botões de navegação
+    back_button = pygame.draw.rect(screen, (255, 99, 71), (50, y + 20, 100, 40))
+    start_button = pygame.draw.rect(screen, (50, 205, 50), (screen.get_width()-150, y + 20, 100, 40))
+    
+    screen.blit(font.render("Back", True, (255, 255, 255)), (70, y + 30))
+    screen.blit(font.render("Start", True, (255, 255, 255)), (screen.get_width()-130, y + 30))
 
+    return buttons, back_button, start_button
 
 def handle_parameter_input(event, params, selected_index):
     key = list(params.keys())[selected_index]

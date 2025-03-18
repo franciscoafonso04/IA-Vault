@@ -125,7 +125,7 @@ def draw_parameter_selection(screen, font, params, selected_index):
             # Botão de alternância para cooling type
             cycle_button = pygame.draw.rect(screen, (200, 200, 200), (200, y, 250, 30))
             current_type = params[key]
-            type_text = font.render(f"Change Type ({current_type})", True, (0, 0, 0))
+            type_text = font.render(f"{current_type}", True, (0, 0, 0))
             screen.blit(type_text, (210, y))
             buttons.append((cycle_button, key, None))
 
@@ -145,7 +145,7 @@ def handle_parameter_input(event, params, selected_index):
 
     if event.key == pygame.K_UP:
         if key == "iterations":
-            params[key] = min(params[key] + 100, 2000)
+            params[key] = min(params[key] + 10, 2000)
         elif key == "cooling_rate":
             params[key] = min(params[key] + 0.01, 1.0)
         elif key == "initial_temperature":
@@ -154,7 +154,7 @@ def handle_parameter_input(event, params, selected_index):
             params[key] = min(params[key] + 1, 20)
     elif event.key == pygame.K_DOWN:
         if key == "iterations":
-            params[key] = max(params[key] - 100, 100)
+            params[key] = max(params[key] - 10, 100)
         elif key == "cooling_rate":
             params[key] = max(params[key] - 0.01, 0.01)
         elif key == "initial_temperature":

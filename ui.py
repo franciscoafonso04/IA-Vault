@@ -44,45 +44,40 @@ def draw_parameters_menu(screen, font, selected_index):
     screen.blit(back_text, (50, y_offset + 40))
 
 
-def handle_parameters_input(event, selected_index):
-    key = list(parameters.keys())[selected_index]  # Get the selected parameter key
-
-    if event.type == pygame.KEYDOWN:
-        if key in ["min_per_table", "max_per_table", "iterations"]:
-            if event.key == pygame.K_UP:
-                # Ensure "iterations" does not exceed its max, and "min_per_table" and "max_per_table" have reasonable limits
-                if key == "iterations":
-                    parameters[key] = min(parameters[key] + 100, MAX_ITERATIONS)
-                else:
-                    parameters[key] = min(parameters[key] + 1, 20 if key == "max_per_table" else 8)
-            elif event.key == pygame.K_DOWN:
-                if key == "iterations":
-                    parameters[key] = max(parameters[key] - 100, 100)
-                else:
-                    parameters[key] = max(parameters[key] - 1, 1)
-        elif key == "initial_temperature":
-            if event.key == pygame.K_UP:
-                parameters[key] = min(parameters[key] + 1, MAX_INITIAL_TEMP)
-            elif event.key == pygame.K_DOWN:
-                parameters[key] = max(parameters[key] - 1, 1)
+def handle_parameter_input(event, params, selected_index):
+    key = list(params.keys())[selected_index]
+    if event.key == pygame.K_UP:
+        if key == "iterations":
+            params[key] = min(params[key] + 10, 2000)
         elif key == "cooling_rate":
-            if event.key == pygame.K_UP:
-                parameters[key] = min((parameters[key] * 100 + 1)/100, MAX_COOLING_RATE)
-            elif event.key == pygame.K_DOWN:
-                parameters[key] = max((parameters[key] *100 - 1)/100, 0.01)
-        elif key == "cooling_type":
-            index = COOLING_TYPES.index(parameters[key])
-            if event.key == pygame.K_UP:
-                parameters[key] = COOLING_TYPES[(index - 1) % len(COOLING_TYPES)]
-            elif event.key == pygame.K_DOWN:
-                parameters[key] = COOLING_TYPES[(index + 1) % len(COOLING_TYPES)]
+            params[key] = min(params[key] + 0.01, 1.0)
+        elif key == "initial_temperature":
+            params[key] = min(params[key] + 1, 100)
+        elif key in ["min_per_table", "max_per_table"]:
+            params[key] = min(params[key] + 1, 20)
+        elif key == "algorithm":
+            algorithms = ["Simulated Annealing", "CNF + WalkSAT", "Tabu Search", "Genetic Algorithm"]
+            current_idx = algorithms.index(params[key])
+            params[key] = algorithms[(current_idx + 1) % len(algorithms)]
+    elif event.key == pygame.K_DOWN:
+        if key == "iterations":
+            params[key] = max(params[key] - 10, 100)
+        elif key == "cooling_rate":
+            params[key] = max(params[key] - 0.01, 0.01)
+        elif key == "initial_temperature":
+            params[key] = max(params[key] - 1, 1)
+        elif key in ["min_per_table", "max_per_table"]:
+            params[key] = max(params[key] - 1, 1)
+        elif key == "algorithm":
+            algorithms = ["Simulated Annealing", "CNF + WalkSAT", "Tabu Search", "Genetic Algorithm"]
+            current_idx = algorithms.index(params[key])
+            params[key] = algorithms[(current_idx - 1) % len(algorithms)]
 
 
 def draw_parameter_selection(screen, font, params, selected_index):
     screen.fill((240, 248, 255))
     title = font.render("Adjust Seating Parameters", True, (0, 0, 0))
     screen.blit(title, (20, 20))
-
     y = 80
     buttons = []
     
@@ -93,14 +88,13 @@ def draw_parameter_selection(screen, font, params, selected_index):
         ("Initial Temperature", "initial_temperature", 1, 1000),
         ("Cooling Rate", "cooling_rate", 0.01, 1.0),
         ("Iterations", "iterations", 100, 10000),
-        ("Cooling Type", "cooling_type", None, None)
+        ("Cooling Type", "cooling_type", None, None),
+        ("Algorithm", "algorithm", None, None)
     ]
-
     for idx, (label, key, min_val, max_val) in enumerate(parameters):
         # Desenha o rótulo
         text = font.render(f"{label}:", True, (0, 0, 0))
         screen.blit(text, (50, y))
-
         # Desenha o valor atual
         value_rect = pygame.Rect(250, y, 150, 30)
         pygame.draw.rect(screen, (255, 255, 255), value_rect)
@@ -108,36 +102,32 @@ def draw_parameter_selection(screen, font, params, selected_index):
         
         value_text = font.render(str(params[key]), True, (0, 0, 0))
         screen.blit(value_text, (260, y + 5))
-
-        # Botões de incremento/decremento para valores numéricos
-        if key != "cooling_type":
-            dec_button = pygame.draw.rect(screen, (200, 200, 200), (200, y, 40, 30))
-            dec_text = font.render("-", True, (0, 0, 0))
-            screen.blit(dec_text, (212, y))
-
-            inc_button = pygame.draw.rect(screen, (200, 200, 200), (410, y, 40, 30))
-            inc_text = font.render("+", True, (0, 0, 0))
-            screen.blit(inc_text, (422, y))
-
-            buttons.append((dec_button, key, -1))
-            buttons.append((inc_button, key, 1))
-        else:
-            # Botão de alternância para cooling type
+        
+        if key == "algorithm":
             cycle_button = pygame.draw.rect(screen, (200, 200, 200), (200, y, 250, 30))
             current_type = params[key]
             type_text = font.render(f"{current_type}", True, (0, 0, 0))
             screen.blit(type_text, (210, y))
             buttons.append((cycle_button, key, None))
-
+        else:
+            dec_button = pygame.draw.rect(screen, (200, 200, 200), (200, y, 40, 30))
+            dec_text = font.render("-", True, (0, 0, 0))
+            screen.blit(dec_text, (212, y))
+            inc_button = pygame.draw.rect(screen, (200, 200, 200), (410, y, 40, 30))
+            inc_text = font.render("+", True, (0, 0, 0))
+            screen.blit(inc_text, (422, y))
+            buttons.append((dec_button, key, -1))
+            buttons.append((inc_button, key, 1))
+        
         y += 50
-
+    
     # Botões de navegação
     back_button = pygame.draw.rect(screen, (255, 99, 71), (50, y + 20, 100, 40))
     start_button = pygame.draw.rect(screen, (50, 205, 50), (screen.get_width()-150, y + 20, 100, 40))
     
     screen.blit(font.render("Back", True, (255, 255, 255)), (70, y + 30))
     screen.blit(font.render("Start", True, (255, 255, 255)), (screen.get_width()-130, y + 30))
-
+    
     return buttons, back_button, start_button
 
 

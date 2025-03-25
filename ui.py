@@ -329,13 +329,19 @@ def draw_seating_arrangement(screen, tables, font, score=None, guests=None):
         
         y_offset += 30 + len(table) * 25 + 20
     
-    # Draw and return back button - FIXED: removed the trailing comma
+    # Draw and return back button
     back_button = pygame.draw.rect(screen, (255, 99, 71), (10, screen.get_height() - 60, 100, 40), border_radius=10)
     text = font.render('Back', True, (255, 255, 255))
     text_rect = text.get_rect(center=(10 + 100 // 2, screen.get_height() - 40))
     screen.blit(text, text_rect)
     
-    return back_button
+    # Draw retry button
+    retry_button = pygame.draw.rect(screen, (50, 205, 50), (120, screen.get_height() - 60, 100, 40), border_radius=10)
+    text = font.render('Retry', True, (255, 255, 255))
+    text_rect = text.get_rect(center=(120 + 100 // 2, screen.get_height() - 40))
+    screen.blit(text, text_rect)
+    
+    return back_button, retry_button
 
 # Add this function to handle scrolling events
 def handle_scroll_event(event, current_state):

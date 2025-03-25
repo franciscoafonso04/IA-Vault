@@ -1,0 +1,17 @@
+Guest,Together1,Together2,Together3,Apart1,Apart2,Apart3
+Alice,Bob,Charlie,David,b,b,b
+Bob,Alice,David,Emma,b,b,b
+Charlie,Kelly,Bob,Fiona,b,b,b
+David,Charlie,Alice,George,b,b,b
+Eve,Frank,Emma,Henry,b,b,b
+Frank,Grace,Eve,Isaac,b,b,b
+Grace,Frank,Alice,Jack,b,b,b
+Emma,Henry,Isaac,Bob,b,b,b
+Fiona,Jack,George,Charlie,b,b,b
+George,David,Fiona,Isaac,b,b,b
+Henry,Eve,Emma,Alice,b,b,b
+Isaac,Frank,George,Bob,b,b,b
+Jack,Grace,Fiona,Henry,b,b,b
+Kelly,Alice,Bob,Charlie,b,b,b
+Liam,Grace,Eve,Frank,b,b,b
+Mia,Frank,Grace,David,b,b,b

@@ -67,9 +67,9 @@ def handle_parameters_input(event, selected_index):
                 parameters[key] = max(parameters[key] - 1, 1)
         elif key == "cooling_rate":
             if event.key == pygame.K_UP:
-                parameters[key] = min(parameters[key] + 0.01, MAX_COOLING_RATE)
+                parameters[key] = min((parameters[key] * 100 + 1)/100, MAX_COOLING_RATE)
             elif event.key == pygame.K_DOWN:
-                parameters[key] = max(parameters[key] - 0.01, 0.01)
+                parameters[key] = max((parameters[key] *100 - 1)/100, 0.01)
         elif key == "cooling_type":
             index = COOLING_TYPES.index(parameters[key])
             if event.key == pygame.K_UP:
@@ -139,44 +139,6 @@ def draw_parameter_selection(screen, font, params, selected_index):
     screen.blit(font.render("Start", True, (255, 255, 255)), (screen.get_width()-130, y + 30))
 
     return buttons, back_button, start_button
-
-def handle_parameter_input(event, params, selected_index):
-    key = list(params.keys())[selected_index]
-
-    if event.key == pygame.K_UP:
-        if key == "iterations":
-            params[key] = min(params[key] + 10, 2000)
-        elif key == "cooling_rate":
-            params[key] = min(params[key] + 0.01, 1.0)
-        elif key == "initial_temperature":
-            params[key] = min(params[key] + 1, 100)
-        elif key in ["min_per_table", "max_per_table"]:
-            params[key] = min(params[key] + 1, 20)
-    elif event.key == pygame.K_DOWN:
-        if key == "iterations":
-            params[key] = max(params[key] - 10, 100)
-        elif key == "cooling_rate":
-            params[key] = max(params[key] - 0.01, 0.01)
-        elif key == "initial_temperature":
-            params[key] = max(params[key] - 1, 1)
-        elif key in ["min_per_table", "max_per_table"]:
-            params[key] = max(params[key] - 1, 1)
-    elif event.key == pygame.K_LEFT:
-        if key == "cooling_rate":
-            params[key] = max(params[key] - 0.01, 0.01)
-    elif event.key == pygame.K_RIGHT:
-        if key == "cooling_rate":
-            params[key] = min(params[key] + 0.01, 1.0)
-    elif event.key == pygame.K_1:
-        if key == "cooling_type":
-            params[key] = "exponential"
-    elif event.key == pygame.K_2:
-        if key == "cooling_type":
-            params[key] = "linear"
-    elif event.key == pygame.K_3:
-        if key == "cooling_type":
-            params[key] = "logarithmic"
-
 
 
 # Função para desenhar a tabela no Pygame

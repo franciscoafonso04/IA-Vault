@@ -247,7 +247,7 @@ def simulated_annealing(guests, initial_temperature, cooling_rate, iterations, m
     # Verify final solution is balanced
     final_sizes = [len(table) for table in best_tables]
 
-    print(f"Simulated annealing completed. Best cost found: {best_cost}, Table sizes: {final_sizes}")
+    print(f"Simulated annealing completed. Best cost found: {round(float(best_cost),2)}, Table sizes: {final_sizes}")
     for table_index, table in enumerate(best_tables):
         print(f"Table {table_index + 1}: {table}") 
 

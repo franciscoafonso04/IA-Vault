@@ -44,40 +44,6 @@ def draw_parameters_menu(screen, font, selected_index):
     screen.blit(back_text, (50, y_offset + 40))
 
 
-def handle_parameters_input(event, selected_index):
-    key = list(parameters.keys())[selected_index]  # Get the selected parameter key
-
-    if event.type == pygame.KEYDOWN:
-        if key in ["min_per_table", "max_per_table", "iterations"]:
-            if event.key == pygame.K_UP:
-                # Ensure "iterations" does not exceed its max, and "min_per_table" and "max_per_table" have reasonable limits
-                if key == "iterations":
-                    parameters[key] = min(parameters[key] + 100, MAX_ITERATIONS)
-                else:
-                    parameters[key] = min(parameters[key] + 1, 20 if key == "max_per_table" else 8)
-            elif event.key == pygame.K_DOWN:
-                if key == "iterations":
-                    parameters[key] = max(parameters[key] - 100, 100)
-                else:
-                    parameters[key] = max(parameters[key] - 1, 1)
-        elif key == "initial_temperature":
-            if event.key == pygame.K_UP:
-                parameters[key] = min(parameters[key] + 1, MAX_INITIAL_TEMP)
-            elif event.key == pygame.K_DOWN:
-                parameters[key] = max(parameters[key] - 1, 1)
-        elif key == "cooling_rate":
-            if event.key == pygame.K_UP:
-                parameters[key] = min((parameters[key] * 100 + 1)/100, MAX_COOLING_RATE)
-            elif event.key == pygame.K_DOWN:
-                parameters[key] = max((parameters[key] *100 - 1)/100, 0.01)
-        elif key == "cooling_type":
-            index = COOLING_TYPES.index(parameters[key])
-            if event.key == pygame.K_UP:
-                parameters[key] = COOLING_TYPES[(index - 1) % len(COOLING_TYPES)]
-            elif event.key == pygame.K_DOWN:
-                parameters[key] = COOLING_TYPES[(index + 1) % len(COOLING_TYPES)]
-
-
 def draw_parameter_selection(screen, font, params, selected_index):
     screen.fill((240, 248, 255))
     title = font.render("Adjust Seating Parameters", True, (0, 0, 0))
@@ -299,7 +265,7 @@ def draw_seating_arrangement(screen, tables, font, score=None, guests=None):
     # Display the score if available
     if score is not None:
         # Display current score
-        score_text = font.render(f'Current Score: {score}', True, (0, 100, 0))
+        score_text = font.render(f'Current Score: {round(score,2)}', True, (0, 100, 0))
         screen.blit(score_text, (screen.get_width() - 300, 20))
         
         # Calculate and display theoretical perfect score

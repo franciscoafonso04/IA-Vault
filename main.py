@@ -120,12 +120,12 @@ while running:
                                     steps = {
                                         "min_per_table": (1, 1, 20),
                                         "max_per_table": (1, 1, 20),
-                                        "initial_temperature": (10, 1, 1000),
-                                        "cooling_rate": (0.01, 0.01, 1.0),
+                                        "initial_temperature": (10, 10, 1000),
+                                        "cooling_rate": (0.005, 0.01, 1.0),
                                         "iterations": (100, 100, 10000)
                                     }
                                     step, min_val, max_val = steps[key]
-                                    new_value = params[key] + (operation * step)
+                                    new_value = round(params[key] + (operation * step), 3)
                                     params[key] = max(min(new_value, max_val), min_val)
 
     pygame.display.flip()

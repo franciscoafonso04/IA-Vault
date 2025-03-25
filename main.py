@@ -20,7 +20,8 @@ params = {
     "initial_temperature": 100,
     "cooling_rate": 0.95,
     "iterations": 1000,
-    "cooling_type": "exponential"
+    "cooling_type": "exponential",
+    "algorithm": "Simulated Annealing"
 }
 
 guests = file_handler.read_guest_preferences("guest_list.csv")
@@ -75,15 +76,34 @@ while running:
                         try:
                             seater.validate_parameters(params, len(guests))
                             print("Retrying with parameters:", params)
-                            tables = seater.simulated_annealing(
-                                guests=guests, 
-                                initial_temperature=params["initial_temperature"],
-                                cooling_rate=params["cooling_rate"],
-                                iterations=params["iterations"],
-                                cooling_type=params["cooling_type"],
-                                min_per_table=params["min_per_table"],
-                                max_per_table=params["max_per_table"]
-                            )
+                            if params["algorithm"] == "Simulated Annealing":
+                                tables = seater.simulated_annealing(
+                                    guests=guests, 
+                                    initial_temperature=params["initial_temperature"],
+                                    cooling_rate=params["cooling_rate"],
+                                    iterations=params["iterations"],
+                                    cooling_type=params["cooling_type"],
+                                    min_per_table=params["min_per_table"],
+                                    max_per_table=params["max_per_table"]
+                                )
+                            elif params["algorithm"] == "CNF + WalkSAT":
+                                tables = seater.cnf_walksat(
+                                    guests=guests, 
+                                    min_per_table=params["min_per_table"],
+                                    max_per_table=params["max_per_table"]
+                                )
+                            elif params["algorithm"] == "Tabu Search":
+                                tables = seater.tabu_search(
+                                    guests=guests, 
+                                    min_per_table=params["min_per_table"],
+                                    max_per_table=params["max_per_table"]
+                                )
+                            elif params["algorithm"] == "Genetic Algorithm":
+                                tables = seater.genetic_algorithm(
+                                    guests=guests, 
+                                    min_per_table=params["min_per_table"],
+                                    max_per_table=params["max_per_table"]
+                                )
                             current_score = -seater.calculate_cost(tables, guests)
                         except Exception as e:
                             print(f"Error: {e}")
@@ -95,15 +115,34 @@ while running:
                         try:
                             seater.validate_parameters(params, len(guests))
                             print("Starting with parameters:", params)
-                            tables = seater.simulated_annealing(
-                                guests=guests, 
-                                initial_temperature=params["initial_temperature"],
-                                cooling_rate=params["cooling_rate"],
-                                iterations=params["iterations"],
-                                cooling_type=params["cooling_type"],
-                                min_per_table=params["min_per_table"],
-                                max_per_table=params["max_per_table"]
-                            )
+                            if params["algorithm"] == "Simulated Annealing":
+                                tables = seater.simulated_annealing(
+                                    guests=guests, 
+                                    initial_temperature=params["initial_temperature"],
+                                    cooling_rate=params["cooling_rate"],
+                                    iterations=params["iterations"],
+                                    cooling_type=params["cooling_type"],
+                                    min_per_table=params["min_per_table"],
+                                    max_per_table=params["max_per_table"]
+                                )
+                            elif params["algorithm"] == "CNF + WalkSAT":
+                                tables = seater.cnf_walksat(
+                                    guests=guests, 
+                                    min_per_table=params["min_per_table"],
+                                    max_per_table=params["max_per_table"]
+                                )
+                            elif params["algorithm"] == "Tabu Search":
+                                tables = seater.tabu_search(
+                                    guests=guests, 
+                                    min_per_table=params["min_per_table"],
+                                    max_per_table=params["max_per_table"]
+                                )
+                            elif params["algorithm"] == "Genetic Algorithm":
+                                tables = seater.genetic_algorithm(
+                                    guests=guests, 
+                                    min_per_table=params["min_per_table"],
+                                    max_per_table=params["max_per_table"]
+                                )
                             current_score = -seater.calculate_cost(tables, guests)
                             state = VIEW_SEATING
                         except Exception as e:
@@ -116,6 +155,10 @@ while running:
                                     types = ["exponential", "linear", "logarithmic"]
                                     current_idx = types.index(params[key])
                                     params[key] = types[(current_idx + 1) % len(types)]
+                                elif key == "algorithm":
+                                    algorithms = ["Simulated Annealing", "CNF + WalkSAT", "Tabu Search", "Genetic Algorithm"]
+                                    current_idx = algorithms.index(params[key])
+                                    params[key] = algorithms[(current_idx + 1) % len(algorithms)]
                                 else:
                                     steps = {
                                         "min_per_table": (1, 1, 20),

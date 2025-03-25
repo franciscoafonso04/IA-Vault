@@ -44,36 +44,6 @@ def draw_parameters_menu(screen, font, selected_index):
     screen.blit(back_text, (50, y_offset + 40))
 
 
-def handle_parameter_input(event, params, selected_index):
-    key = list(params.keys())[selected_index]
-    if event.key == pygame.K_UP:
-        if key == "iterations":
-            params[key] = min(params[key] + 10, 2000)
-        elif key == "cooling_rate":
-            params[key] = min(params[key] + 0.01, 1.0)
-        elif key == "initial_temperature":
-            params[key] = min(params[key] + 1, 100)
-        elif key in ["min_per_table", "max_per_table"]:
-            params[key] = min(params[key] + 1, 20)
-        elif key == "algorithm":
-            algorithms = ["Simulated Annealing", "CNF + WalkSAT", "Tabu Search", "Genetic Algorithm"]
-            current_idx = algorithms.index(params[key])
-            params[key] = algorithms[(current_idx + 1) % len(algorithms)]
-    elif event.key == pygame.K_DOWN:
-        if key == "iterations":
-            params[key] = max(params[key] - 10, 100)
-        elif key == "cooling_rate":
-            params[key] = max(params[key] - 0.01, 0.01)
-        elif key == "initial_temperature":
-            params[key] = max(params[key] - 1, 1)
-        elif key in ["min_per_table", "max_per_table"]:
-            params[key] = max(params[key] - 1, 1)
-        elif key == "algorithm":
-            algorithms = ["Simulated Annealing", "CNF + WalkSAT", "Tabu Search", "Genetic Algorithm"]
-            current_idx = algorithms.index(params[key])
-            params[key] = algorithms[(current_idx - 1) % len(algorithms)]
-
-
 def draw_parameter_selection(screen, font, params, selected_index):
     screen.fill((240, 248, 255))
     title = font.render("Adjust Seating Parameters", True, (0, 0, 0))

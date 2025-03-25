@@ -28,6 +28,7 @@ tables = seater.create_balanced_seating(guests, params["min_per_table"], params[
 current_score = None
 
 running = True
+
 while running:
     screen.fill((255, 255, 255))
 
@@ -37,11 +38,10 @@ while running:
     elif state == VIEW_PREFERENCES:
         back_button = ui.draw_table(screen, guests, font, row_height=40, col_widths=[200, 200, 200])
     elif state == VIEW_SEATING:
-        back_button = ui.draw_seating_arrangement(screen, tables, font, score=current_score, guests=guests)
+        back_button, retry_button = ui.draw_seating_arrangement(screen, tables, font, score=current_score, guests=guests)
     elif state == PARAMETER_SELECTION:
         selected_index = 0
-        # Modificado para receber os botões de parâmetro
-        param_buttons, back_button, start_button = ui.draw_parameter_selection(screen, font, params,selected_index)
+        param_buttons, back_button, start_button = ui.draw_parameter_selection(screen, font, params, selected_index)
 
     # Process events
     for event in pygame.event.get():
@@ -64,6 +64,30 @@ while running:
                     elif button2_rect.collidepoint(mouse_pos):
                         state = VIEW_PREFERENCES
                         
+                elif state == VIEW_PREFERENCES:
+                    if back_button.collidepoint(mouse_pos):
+                        state = MENU
+                        
+                elif state == VIEW_SEATING:
+                    if back_button.collidepoint(mouse_pos):
+                        state = MENU
+                    elif retry_button.collidepoint(mouse_pos):
+                        try:
+                            seater.validate_parameters(params, len(guests))
+                            print("Retrying with parameters:", params)
+                            tables = seater.simulated_annealing(
+                                guests=guests, 
+                                initial_temperature=params["initial_temperature"],
+                                cooling_rate=params["cooling_rate"],
+                                iterations=params["iterations"],
+                                cooling_type=params["cooling_type"],
+                                min_per_table=params["min_per_table"],
+                                max_per_table=params["max_per_table"]
+                            )
+                            current_score = -seater.calculate_cost(tables, guests)
+                        except Exception as e:
+                            print(f"Error: {e}")
+                        
                 elif state == PARAMETER_SELECTION:
                     if back_button.collidepoint(mouse_pos):
                         state = MENU
@@ -85,7 +109,6 @@ while running:
                         except Exception as e:
                             print(f"Error: {e}")
                     else:
-                        # Verifica cliques nos botões de parâmetro
                         for btn in param_buttons:
                             rect, key, operation = btn
                             if rect.collidepoint(mouse_pos):
@@ -94,7 +117,6 @@ while running:
                                     current_idx = types.index(params[key])
                                     params[key] = types[(current_idx + 1) % len(types)]
                                 else:
-                                    # Define limites e passos
                                     steps = {
                                         "min_per_table": (1, 1, 20),
                                         "max_per_table": (1, 1, 20),
@@ -105,10 +127,6 @@ while running:
                                     step, min_val, max_val = steps[key]
                                     new_value = params[key] + (operation * step)
                                     params[key] = max(min(new_value, max_val), min_val)
-                                    
-                elif state in (VIEW_PREFERENCES, VIEW_SEATING):
-                    if back_button.collidepoint(mouse_pos):
-                        state = MENU
 
     pygame.display.flip()
 

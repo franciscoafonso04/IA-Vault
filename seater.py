@@ -1,6 +1,8 @@
 import random
 import math
 import copy
+from datetime import datetime
+import plotting
 
 def calculate_cost(tables, guests):
     """
@@ -192,9 +194,17 @@ def validate_parameters(params, num_guests):
         raise ValueError("cooling_type must be 'exponential', 'linear', or 'logarithmic'.")
     
 def simulated_annealing(guests, initial_temperature, cooling_rate, iterations, min_per_table, max_per_table, cooling_type):
-    """
-    Apply simulated annealing to find an optimal seating arrangement.
-    """
+    """Apply simulated annealing to find an optimal seating arrangement."""
+    
+    # Initialize metrics collection
+    metrics = {
+        'timestamp': datetime.now().strftime("%Y%m%d_%H%M%S"),
+        'iterations': [],
+        'costs': [],
+        'best_costs': [],
+        'temperatures': []
+    }
+    
     # Create initial solution
     tables = create_balanced_seating(guests, min_per_table, max_per_table)
     current_cost = calculate_cost(tables, guests)
@@ -204,15 +214,21 @@ def simulated_annealing(guests, initial_temperature, cooling_rate, iterations, m
     temperature = initial_temperature
     
     for i in range(iterations):
-        # Generate a neighbor solution
+        # Record metrics
+        metrics['iterations'].append(i)
+        metrics['costs'].append(current_cost)
+        metrics['best_costs'].append(best_cost)
+        metrics['temperatures'].append(temperature)
+        
+        # Generate neighbor solution
         neighbor_tables = create_neighbor(tables, min_per_table, max_per_table)
         neighbor_cost = calculate_cost(neighbor_tables, guests)
         
-        # Calculate delta cost (change in cost)
+        # Calculate delta cost
         delta_cost = neighbor_cost - current_cost
         
         # Decide whether to accept the new solution
-        if delta_cost < 0:  # Better solution, always accept
+        if delta_cost < 0 or random.random() < math.exp(-delta_cost / temperature):
             tables = neighbor_tables
             current_cost = neighbor_cost
             
@@ -220,14 +236,8 @@ def simulated_annealing(guests, initial_temperature, cooling_rate, iterations, m
             if current_cost < best_cost:
                 best_tables = copy.deepcopy(tables)
                 best_cost = current_cost
-        else:
-            # Worse solution, accept with a probability
-            acceptance_probability = math.exp(-delta_cost / temperature)
-            if random.random() < acceptance_probability:
-                tables = neighbor_tables
-                current_cost = neighbor_cost
         
-        # Cool down the temperature
+        # Cool down temperature
         if cooling_type == "exponential":
             temperature *= cooling_rate
         elif cooling_type == "linear":
@@ -237,20 +247,14 @@ def simulated_annealing(guests, initial_temperature, cooling_rate, iterations, m
 
         if temperature < 0.01:
             break
-        
-        # Optionally print progress
-        if i % 100 == 0:
-            # Check table sizes to monitor balance
-            sizes = [len(table) for table in tables]
-            print(f"Iteration {i}, Cost: {current_cost}, Temperature: {temperature:.2f}, Table sizes: {sizes}")
     
-    # Verify final solution is balanced
+    # Plot performance metrics
+    plotting.plot_performance_metrics(metrics)
+    
+    # Print final results
     final_sizes = [len(table) for table in best_tables]
-
-    print(f"Simulated annealing completed. Best cost found: {round(float(best_cost),2)}, Table sizes: {final_sizes}")
-    for table_index, table in enumerate(best_tables):
-        print(f"Table {table_index + 1}: {table}") 
-
+    print(f"Simulated annealing completed. Best cost: {round(float(best_cost),2)}, Table sizes: {final_sizes}")
+    
     return best_tables
 
 def create_balanced_seating(guests, min_per_table, max_per_table):

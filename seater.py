@@ -4,152 +4,152 @@ import copy
 from datetime import datetime
 import plotting
 
-    def calculate_cost(tables, guests):
-        """
-        Calculate the cost (energy) of a seating arrangement.
-        Lower cost means better arrangement.
+def calculate_cost(tables, guests):
+    """
+    Calculate the cost (energy) of a seating arrangement.
+    Lower cost means better arrangement.
 
-        The cost is calculated based on:
-        - Rewarding seating guests with those they prefer.
-        - Penalizing seating guests with those they want to avoid.
-        - Adding penalties for unbalanced table sizes.
-        """
+    The cost is calculated based on:
+    - Rewarding seating guests with those they prefer.
+    - Penalizing seating guests with those they want to avoid.
+    - Adding penalties for unbalanced table sizes.
+    """
 
-        cost = 0
-        
-        # Check each table
-        for table in tables:
-            for guest in table:
-                preferences = guests[guest]
-                
-                # Penalty for being seated with someone the guest wants to avoid.
-                cost += sum(20 for avoided in preferences['avoids'] if avoided in table)
+    cost = 0
+    
+    # Check each table
+    for table in tables:
+        for guest in table:
+            preferences = guests[guest]
+            
+            # Penalty for being seated with someone the guest wants to avoid.
+            cost += sum(20 for avoided in preferences['avoids'] if avoided in table)
 
-                # Reward for being seated with a preferred guest.
-                cost -= sum(10 for preferred in preferences['prefers'] if preferred in table)
-                        
-        # Add much stronger penalty for unbalanced tables.
-        table_sizes = [len(table) for table in tables]
-        if not table_sizes:
-            return cost
-        
-        avg_size = sum(table_sizes) / len(tables) if tables else 0
-        max_size = max(table_sizes)
-        min_size = min(table_sizes)
-        
-        # Extreme penalty if max and min differ by more than 1
-        if max_size - min_size > 1:
-            cost += (max_size - min_size) * 200 # Scalable Penalty
-        
-        # Normal balance penalty proportional to deviation from the average table size.
-        for size in table_sizes:
-            cost += abs(size - avg_size) * 20  # Higher penalty for unbalanced tables
-                        
+            # Reward for being seated with a preferred guest.
+            cost -= sum(10 for preferred in preferences['prefers'] if preferred in table)
+                    
+    # Add much stronger penalty for unbalanced tables.
+    table_sizes = [len(table) for table in tables]
+    if not table_sizes:
         return cost
+    
+    avg_size = sum(table_sizes) / len(tables) if tables else 0
+    max_size = max(table_sizes)
+    min_size = min(table_sizes)
+    
+    # Extreme penalty if max and min differ by more than 1
+    if max_size - min_size > 1:
+        cost += (max_size - min_size) * 200 # Scalable Penalty
+    
+    # Normal balance penalty proportional to deviation from the average table size.
+    for size in table_sizes:
+        cost += abs(size - avg_size) * 20  # Higher penalty for unbalanced tables
+                    
+    return cost
 
-    def calculate_tables_needed(num_guests, seats_per_table=6):
-        return math.ceil(num_guests / seats_per_table)
+def calculate_tables_needed(num_guests, seats_per_table=6):
+    return math.ceil(num_guests / seats_per_table)
 
-    def evaluate_seating(tables, guests):
-        """
-        Evaluate how good a seating arrangement is based on guest preferences.
-        Higher score means better arrangement.
-        """
-        score = 0
-        
-        # Check each table
-        for table in tables:
-            # For each guest at this table
-            for guest in table:
-                preferences = guests[guest]
-                
-                # Check if preferred people are at same table
-                for preferred in preferences.get('prefers',[]):
-                    if preferred in table:
-                        score += 10  # High positive score for respecting "together" preferences
-                
-                # Check if avoided people are at same table (penalty)
-                for avoided in preferences.get('avoids',[]):
-                    if avoided in table:
-                        score -= 20  # High penalty for putting people who should be apart together
-        
-        return score
-
-
-
-    def create_neighbor(tables, min_per_table, max_per_table):
-        """
-        Create a neighbor solution by making a small change to the current solution
-        while maintaining balanced tables.
-        Returns a new tables arrangement without modifying the original.
-        """
-        new_tables = copy.deepcopy(tables)
-        
-        # Get current table sizes
-        table_sizes = [len(table) for table in new_tables]
-        min_size = min(table_sizes)
-        max_size = max(table_sizes)
-        
-        # If tables are severely unbalanced, force balancing
-        if max_size - min_size > 1:
-            # Find the largest and smallest tables
-            largest_tables = [i for i, size in enumerate(table_sizes) if size == max_size]
-            smallest_tables = [i for i, size in enumerate(table_sizes) if size == min_size]
+def evaluate_seating(tables, guests):
+    """
+    Evaluate how good a seating arrangement is based on guest preferences.
+    Higher score means better arrangement.
+    """
+    score = 0
+    
+    # Check each table
+    for table in tables:
+        # For each guest at this table
+        for guest in table:
+            preferences = guests[guest]
             
-            # Force move from largest to smallest
-            from_table = random.choice(largest_tables)
-            to_table = random.choice(smallest_tables)
+            # Check if preferred people are at same table
+            for preferred in preferences.get('prefers',[]):
+                if preferred in table:
+                    score += 10  # High positive score for respecting "together" preferences
             
-            if new_tables[from_table]:  # Make sure source table is not empty
-                guest_index = random.randint(0, len(new_tables[from_table]) - 1)
-                guest = new_tables[from_table].pop(guest_index)
-                new_tables[to_table].append(guest)
+            # Check if avoided people are at same table (penalty)
+            for avoided in preferences.get('avoids',[]):
+                if avoided in table:
+                    score -= 20  # High penalty for putting people who should be apart together
+    
+    return score
 
-            return new_tables
+
+
+def create_neighbor(tables, min_per_table, max_per_table):
+    """
+    Create a neighbor solution by making a small change to the current solution
+    while maintaining balanced tables.
+    Returns a new tables arrangement without modifying the original.
+    """
+    new_tables = copy.deepcopy(tables)
+    
+    # Get current table sizes
+    table_sizes = [len(table) for table in new_tables]
+    min_size = min(table_sizes)
+    max_size = max(table_sizes)
+    
+    # If tables are severely unbalanced, force balancing
+    if max_size - min_size > 1:
+        # Find the largest and smallest tables
+        largest_tables = [i for i, size in enumerate(table_sizes) if size == max_size]
+        smallest_tables = [i for i, size in enumerate(table_sizes) if size == min_size]
         
-        # Mantém os limites de capacidade em todas as operações
-        def is_valid_move(from_table, to_table):
-            return (
-                len(new_tables[from_table]) > min_per_table and
-                len(new_tables[to_table]) < max_per_table
-            )
-        # If tables are balanced (diff ≤ 1), use normal operations
-        operation = random.choice(['swap', 'move'])
+        # Force move from largest to smallest
+        from_table = random.choice(largest_tables)
+        to_table = random.choice(smallest_tables)
         
-        if operation == 'swap' and len(new_tables) >= 2:
-            # Swap: Choose two random guests on different tables and swap them
-            table1_index = random.randint(0, len(new_tables) - 1)
+        if new_tables[from_table]:  # Make sure source table is not empty
+            guest_index = random.randint(0, len(new_tables[from_table]) - 1)
+            guest = new_tables[from_table].pop(guest_index)
+            new_tables[to_table].append(guest)
+
+        return new_tables
+    
+    # Mantém os limites de capacidade em todas as operações
+    def is_valid_move(from_table, to_table):
+        return (
+            len(new_tables[from_table]) > min_per_table and
+            len(new_tables[to_table]) < max_per_table
+        )
+    # If tables are balanced (diff ≤ 1), use normal operations
+    operation = random.choice(['swap', 'move'])
+    
+    if operation == 'swap' and len(new_tables) >= 2:
+        # Swap: Choose two random guests on different tables and swap them
+        table1_index = random.randint(0, len(new_tables) - 1)
+        table2_index = random.randint(0, len(new_tables) - 1)
+        
+        # Ensure different tables
+        while table1_index == table2_index:
             table2_index = random.randint(0, len(new_tables) - 1)
             
-            # Ensure different tables
-            while table1_index == table2_index:
-                table2_index = random.randint(0, len(new_tables) - 1)
-                
-            # Ensure neither table is empty
-            if new_tables[table1_index] and new_tables[table2_index]:
-                guest1_index = random.randint(0, len(new_tables[table1_index]) - 1)
-                guest2_index = random.randint(0, len(new_tables[table2_index]) - 1)
-                
-                # Swap guests - this preserves table sizes
-                new_tables[table1_index][guest1_index], new_tables[table2_index][guest2_index] = \
-                    new_tables[table2_index][guest2_index], new_tables[table1_index][guest1_index]
-        
-        elif operation == 'move' and len(new_tables) >= 2:
-            from_table = random.randint(0, len(new_tables) - 1)     
-            to_table = random.randint(0, len(new_tables) - 1)
-            if from_table != to_table and new_tables[from_table]:
+        # Ensure neither table is empty
+        if new_tables[table1_index] and new_tables[table2_index]:
+            guest1_index = random.randint(0, len(new_tables[table1_index]) - 1)
+            guest2_index = random.randint(0, len(new_tables[table2_index]) - 1)
             
-            # Check capacity constraints before moving:
-                if is_valid_move(from_table, to_table):
+            # Swap guests - this preserves table sizes
+            new_tables[table1_index][guest1_index], new_tables[table2_index][guest2_index] = \
+                new_tables[table2_index][guest2_index], new_tables[table1_index][guest1_index]
+    
+    elif operation == 'move' and len(new_tables) >= 2:
+        from_table = random.randint(0, len(new_tables) - 1)     
+        to_table = random.randint(0, len(new_tables) - 1)
+        if from_table != to_table and new_tables[from_table]:
+        
+        # Check capacity constraints before moving:
+            if is_valid_move(from_table, to_table):
                 guest_index = random.randint(0, len(new_tables[from_table]) - 1)
                 guest = new_tables[from_table].pop(guest_index)
                 new_tables[to_table].append(guest)
 
-        # Reassures that every table respects the mins and maxs.
-        if any(len(table) < min_per_table or len(table) > max_per_table for table in new_tables):
-            return tables 
-        
-        return new_tables
+    # Reassures that every table respects the mins and maxs.
+    if any(len(table) < min_per_table or len(table) > max_per_table for table in new_tables):
+        return tables 
+    
+    return new_tables
 
 
 def validate_parameters(params, num_guests):
@@ -347,12 +347,6 @@ def simulated_annealing(guests, initial_temperature, cooling_rate, iterations, m
                         
         return best_tables
 
-# Replace create_random_seating calls with create_balanced_seating
-def create_random_seating(guests, min_per_table, max_per_table):
-    """
-    Legacy function - now delegates to create_balanced_seating
-    """
-    return create_balanced_seating(guests, min_per_table, max_per_table)
 
 def calculate_theoretical_perfect_score(guests):
     """
@@ -376,8 +370,81 @@ def calculate_theoretical_perfect_score(guests):
     return perfect_score
 
 def cnf_walksat(guests, min_per_table, max_per_table, max_flips=10000):
-    # Implement the CNF + WalkSAT algorithm here
-    pass
+    """
+    Implements the CNF + WalkSAT algorithm to find an optimal seating arrangement.
+    """
+    import random
+    
+    def generate_cnf_formula(guests, min_per_table, max_per_table):
+        """Generates a CNF formula representing the seating constraints."""
+        cnf = []
+        guest_list = list(guests.keys())
+        num_guests = len(guest_list)
+        num_tables = (num_guests + min_per_table - 1) // min_per_table
+        
+        guest_table_vars = {guest: [f"{guest}_T{i}" for i in range(num_tables)] for guest in guest_list}
+        
+        
+        for guest, tables in guest_table_vars.items():
+            cnf.append(tables)  
+            for i in range(len(tables)):
+                for j in range(i + 1, len(tables)):
+                    cnf.append([f"-{tables[i]}", f"-{tables[j]}"])  # At most one table
+        
+      
+        for guest, preferences in guests.items():
+            for preferred in preferences['prefers']:
+                if preferred in guest_table_vars:
+                    for i in range(num_tables):
+                        cnf.append([f"-{guest_table_vars[guest][i]}", guest_table_vars[preferred][i]])
+                        cnf.append([guest_table_vars[guest][i], f"-{guest_table_vars[preferred][i]}"])
+        
+        for guest, preferences in guests.items():
+            for avoided in preferences['avoids']:
+                if avoided in guest_table_vars:
+                    for i in range(num_tables):
+                        cnf.append([f"-{guest_table_vars[guest][i]}", f"-{guest_table_vars[avoided][i]}"])
+        
+        return cnf, guest_table_vars
+    
+    def evaluate_solution(solution, cnf):
+        """Evaluates the number of satisfied clauses in the CNF formula."""
+        return sum(1 for clause in cnf if any(literal in solution for literal in clause))
+    
+    def flip_variable(solution, cnf, guest_table_vars):
+        """Randomly flips a variable to potentially satisfy more clauses."""
+        unsatisfied_clauses = [clause for clause in cnf if not any(literal in solution for literal in clause)]
+        if not unsatisfied_clauses:
+            return solution
+        clause = random.choice(unsatisfied_clauses)
+        literal = random.choice(clause)
+        
+        
+        guest = literal.split("_")[0]
+        for var in guest_table_vars[guest]:
+            if var in solution:
+                solution.remove(var)
+        solution.add(literal)
+        
+        return solution
+    
+
+    cnf, guest_table_vars = generate_cnf_formula(guests, min_per_table, max_per_table)
+    
+
+    current_solution = set()
+    for guest, tables in guest_table_vars.items():
+        current_solution.add(random.choice(tables))
+    
+    for flip in range(max_flips):
+        if evaluate_solution(current_solution, cnf) == len(cnf):
+            print(f"Solution found in {flip} flips")
+            return current_solution
+        current_solution = flip_variable(current_solution, cnf, guest_table_vars)
+    
+    print("No solution found within max flips")
+    return None
+
 
 def tabu_search(guests, min_per_table, max_per_table, tabu_size=10, max_iterations=1000):
     # Implement the Tabu Search algorithm here
@@ -385,7 +452,52 @@ def tabu_search(guests, min_per_table, max_per_table, tabu_size=10, max_iteratio
 
 def genetic_algorithm(guests, min_per_table, max_per_table, population_size=100, generations=1000, mutation_rate=0.01):
     """
-    Apply genetic algorithm to find an optimal seating arrangement.
+    Implements a Genetic Algorithm to optimize guest seating arrangements.
     """
+    import random
+    
+    def create_initial_population():
+        """Creates an initial population of balanced table arrangements."""
+        return [create_balanced_seating(guests, min_per_table, max_per_table) for _ in range(population_size)]
+    
+    def select_parents(population):
+        """Selects two parents based on fitness (lower cost is better)."""
+        population_sorted = sorted(population, key=lambda x: calculate_cost(x, guests))
+        return random.choices(population_sorted[:population_size // 2], k=2)
+    
+    def crossover(parent1, parent2):
+        """Performs crossover between two parents to generate a child."""
+        child = copy.deepcopy(parent1)
+        for table in child:
+            if random.random() < 0.5:
+                other_table = random.choice(parent2)
+                if len(other_table) > min_per_table and len(table) < max_per_table:
+                    table.append(other_table.pop(0))
+        return child
+    
+    def mutate(individual):
+        """Applies mutation to an individual to introduce diversity."""
+        if random.random() < mutation_rate:
+            return create_neighbor(individual, min_per_table, max_per_table)
+        return individual
+ 
+    population = create_initial_population()
+    
+    for generation in range(generations):
+        new_population = []
+        for _ in range(population_size // 2):
+            parent1, parent2 = select_parents(population)
+            child1, child2 = crossover(parent1, parent2), crossover(parent2, parent1)
+            new_population.extend([mutate(child1), mutate(child2)])
+        
+        population = sorted(new_population, key=lambda x: calculate_cost(x, guests))[:population_size]
+        
+        if generation % 100 == 0:
+            print(f"Generation {generation}: Best cost = {calculate_cost(population[0], guests)}")
+    
+    best_tables = min(population, key=lambda x: calculate_cost(x, guests))
+    print(f"Best tables found: Cost = {calculate_cost(best_tables, guests)}")
+    return best_tables
+
 
     

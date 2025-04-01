@@ -1,6 +1,8 @@
-    import random
-    import math
-    import copy
+import random
+import math
+import copy
+from datetime import datetime
+import plotting
 
     def calculate_cost(tables, guests):
         """
@@ -150,108 +152,110 @@
         return new_tables
 
 
-    def validate_parameters(params, num_guests):
-        """
-        Validate the parameters to ensure they are logical and within acceptable ranges.
+def validate_parameters(params, num_guests):
+    """
+    Validate the parameters to ensure they are logical and within acceptable ranges.
+    
+    Args:
+        params (dict): Dictionary containing the parameters.
+        num_guests (int): Total number of guests.
+    
+    Raises:
+        ValueError: If any parameter is invalid.
+    """
+    # Verifica min_per_table e max_per_table
+    if not (isinstance(params["min_per_table"], int) and params["min_per_table"] > 0):
+        raise ValueError("min_per_table must be a positive integer.")
+    if not (isinstance(params["max_per_table"], int) and params["max_per_table"] > 0):
+        raise ValueError("max_per_table must be a positive integer.")
+    if params["max_per_table"] < params["min_per_table"]:
+        raise ValueError("max_per_table must be greater than or equal to min_per_table.")
+    
+    # Verifica se o número de mesas é viável
+    min_tables_needed = math.ceil(num_guests / params["max_per_table"])
+    max_tables_needed = math.ceil(num_guests / params["min_per_table"])
+    if min_tables_needed > max_tables_needed:
+        raise ValueError("Invalid table sizes: Not possible to seat all guests with the given min_per_table and max_per_table.")
+    
+    # Verifica initial_temperature
+    if not (isinstance(params["initial_temperature"], (int, float)) and params["initial_temperature"] > 0):
+        raise ValueError("initial_temperature must be a positive number.")
+    
+    # Verifica cooling_rate
+    if not (isinstance(params["cooling_rate"], (int, float)) and 0 < params["cooling_rate"] < 1):
+        raise ValueError("cooling_rate must be between 0 and 1.")
+    
+    # Verifica iterations
+    if not (isinstance(params["iterations"], int) and params["iterations"] > 0):
+        raise ValueError("iterations must be a positive integer.")
+    
+    # Verifica cooling_type
+    if params["cooling_type"] not in ["exponential", "linear", "logarithmic"]:
+        raise ValueError("cooling_type must be 'exponential', 'linear', or 'logarithmic'.")
+    
+def simulated_annealing(guests, initial_temperature, cooling_rate, iterations, min_per_table, max_per_table, cooling_type):
+    """Apply simulated annealing to find an optimal seating arrangement."""
+    
+    # Initialize metrics collection
+    metrics = {
+        'timestamp': datetime.now().strftime("%Y%m%d_%H%M%S"),
+        'iterations': [],
+        'costs': [],
+        'best_costs': [],
+        'temperatures': []
+    }
+    
+    # Create initial solution
+    tables = create_balanced_seating(guests, min_per_table, max_per_table)
+    current_cost = calculate_cost(tables, guests)
+    
+    best_tables = copy.deepcopy(tables)
+    best_cost = current_cost
+    temperature = initial_temperature
+    
+    for i in range(iterations):
+        # Record metrics
+        metrics['iterations'].append(i)
+        metrics['costs'].append(current_cost)
+        metrics['best_costs'].append(best_cost)
+        metrics['temperatures'].append(temperature)
         
-        Args:
-            params (dict): Dictionary containing the parameters.
-            num_guests (int): Total number of guests.
+        # Generate neighbor solution
+        neighbor_tables = create_neighbor(tables, min_per_table, max_per_table)
+        neighbor_cost = calculate_cost(neighbor_tables, guests)
         
-        Raises:
-            ValueError: If any parameter is invalid.
-        """
-        # Verifica min_per_table e max_per_table
-        if not (isinstance(params["min_per_table"], int) and params["min_per_table"] > 0):
-            raise ValueError("min_per_table must be a positive integer.")
-        if not (isinstance(params["max_per_table"], int) and params["max_per_table"] > 0):
-            raise ValueError("max_per_table must be a positive integer.")
-        if params["max_per_table"] < params["min_per_table"]:
-            raise ValueError("max_per_table must be greater than or equal to min_per_table.")
+        # Calculate delta cost
+        delta_cost = neighbor_cost - current_cost
         
-        # Verifica se o número de mesas é viável
-        min_tables_needed = math.ceil(num_guests / params["max_per_table"])
-        max_tables_needed = math.ceil(num_guests / params["min_per_table"])
-        if min_tables_needed > max_tables_needed:
-            raise ValueError("Invalid table sizes: Not possible to seat all guests with the given min_per_table and max_per_table.")
-        
-        # Verifica initial_temperature
-        if not (isinstance(params["initial_temperature"], (int, float)) and params["initial_temperature"] > 0):
-            raise ValueError("initial_temperature must be a positive number.")
-        
-        # Verifica cooling_rate
-        if not (isinstance(params["cooling_rate"], (int, float)) and 0 < params["cooling_rate"] < 1):
-            raise ValueError("cooling_rate must be between 0 and 1.")
-        
-        # Verifica iterations
-        if not (isinstance(params["iterations"], int) and params["iterations"] > 0):
-            raise ValueError("iterations must be a positive integer.")
-        
-        # Verifica cooling_type
-        if params["cooling_type"] not in ["exponential", "linear", "logarithmic"]:
-            raise ValueError("cooling_type must be 'exponential', 'linear', or 'logarithmic'.")
-        
-    def simulated_annealing(guests, initial_temperature, cooling_rate, iterations, min_per_table, max_per_table, cooling_type):
-        """
-        Apply simulated annealing to find an optimal seating arrangement.
-        """
-        # Create initial solution
-        tables = create_balanced_seating(guests, min_per_table, max_per_table)
-        current_cost = calculate_cost(tables, guests)
-        
-        best_tables = copy.deepcopy(tables)
-        best_cost = current_cost
-        temperature = initial_temperature
-        
-        for i in range(iterations):
-            # Generate a neighbor solution
-            neighbor_tables = create_neighbor(tables, min_per_table, max_per_table)
-            neighbor_cost = calculate_cost(neighbor_tables, guests)
+        # Decide whether to accept the new solution
+        if delta_cost < 0 or random.random() < math.exp(-delta_cost / temperature):
+            tables = neighbor_tables
+            current_cost = neighbor_cost
             
-            # Calculate delta cost (change in cost)
-            delta_cost = neighbor_cost - current_cost
-            
-            # Decide whether to accept the new solution
-            if delta_cost < 0:  # Better solution, always accept
-                tables = neighbor_tables
-                current_cost = neighbor_cost
-                
-                # Update best solution if this is better
-                if current_cost < best_cost:
-                    best_tables = copy.deepcopy(tables)
-                    best_cost = current_cost
-            else:
-                # Worse solution, accept with a probability
-                acceptance_probability = math.exp(-delta_cost / temperature)
-                if random.random() < acceptance_probability:
-                    tables = neighbor_tables
-                    current_cost = neighbor_cost
-            
-            # Cool down the temperature
-            if cooling_type == "exponential":
-                temperature *= cooling_rate
-            elif cooling_type == "linear":
-                temperature -= initial_temperature / iterations
-            elif cooling_type == "logarithmic":
-                temperature = initial_temperature / (1 + math.log(1 + i))
+            # Update best solution if this is better
+            if current_cost < best_cost:
+                best_tables = copy.deepcopy(tables)
+                best_cost = current_cost
+        
+        # Cool down temperature
+        if cooling_type == "exponential":
+            temperature *= cooling_rate
+        elif cooling_type == "linear":
+            temperature -= initial_temperature / iterations
+        elif cooling_type == "logarithmic":
+            temperature = initial_temperature / (1 + math.log(1 + i))
 
-            if temperature < 0.01:
-                break
-            
-            # Optionally print progress
-            if i % 100 == 0:
-                # Check table sizes to monitor balance
-                sizes = [len(table) for table in tables]
-                print(f"Iteration {i}, Cost: {current_cost}, Temperature: {temperature:.2f}, Table sizes: {sizes}")
-        
-        # Verify final solution is balanced
-        final_sizes = [len(table) for table in best_tables]
-
-        print(f"Simulated annealing completed. Best cost found: {round(float(best_cost),2)}, Table sizes: {final_sizes}")
-        for table_index, table in enumerate(best_tables):
-            print(f"Table {table_index + 1}: {table}") 
-
-        return best_tables
+        if temperature < 0.01:
+            break
+    
+    # Plot performance metrics
+    plotting.plot_performance_metrics(metrics)
+    
+    # Print final results
+    final_sizes = [len(table) for table in best_tables]
+    print(f"Simulated annealing completed. Best cost: {round(float(best_cost),2)}, Table sizes: {final_sizes}")
+    
+    return best_tables
 
     def create_balanced_seating(guests, min_per_table, max_per_table):
         """

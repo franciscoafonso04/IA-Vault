@@ -105,6 +105,17 @@ while running:
                                     max_per_table=params["max_per_table"]
                                 )
                             current_score = -seater.calculate_cost(tables, guests)
+                            perfect_score = seater.calculate_theoretical_perfect_score(guests)
+                            optimality = (current_score / perfect_score * 100) if perfect_score > 0 else 0
+                            
+                            # Save the seating arrangement with metrics
+                            file_handler.write_seating_arrangement(
+                                tables, 
+                                current_score=current_score,
+                                perfect_score=perfect_score,
+                                optimality=optimality,
+                                algorithm=params["algorithm"]  # Add this line
+                            )
                         except Exception as e:
                             print(f"Error: {e}")
                         
@@ -144,6 +155,17 @@ while running:
                                     max_per_table=params["max_per_table"]
                                 )
                             current_score = -seater.calculate_cost(tables, guests)
+                            perfect_score = seater.calculate_theoretical_perfect_score(guests)
+                            optimality = (current_score / perfect_score * 100) if perfect_score > 0 else 0
+                            
+                            # Save the seating arrangement with metrics
+                            file_handler.write_seating_arrangement(
+                                tables, 
+                                current_score=current_score,
+                                perfect_score=perfect_score,
+                                optimality=optimality,
+                                algorithm=params["algorithm"]  # Add this line
+                            )
                             state = VIEW_SEATING
                         except Exception as e:
                             print(f"Error: {e}")
@@ -170,7 +192,6 @@ while running:
                                     step, min_val, max_val = steps[key]
                                     new_value = round(params[key] + (operation * step), 3)
                                     params[key] = max(min(new_value, max_val), min_val)
-
     pygame.display.flip()
 
 pygame.quit()

@@ -1,4 +1,4 @@
-import pygame 
+import pygame  
 import file_handler
 import seater
 import ui

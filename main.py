@@ -30,6 +30,29 @@ current_score = None
 
 running = True
 
+def crossover(parent1, parent2):
+    """Performs crossover between two parents to generate a child."""
+    child = []
+    used_guests = set()
+
+    for table1, table2 in zip(parent1, parent2):
+        # Combine guests from both parents while avoiding duplicates
+        combined_table = [guest for guest in table1 if guest not in used_guests] + \
+                         [guest for guest in table2 if guest not in used_guests]
+        used_guests.update(combined_table)
+        child.append(combined_table[:params["max_per_table"]])  # Ensure table size constraints
+
+    # Distribute remaining guests to ensure all guests are included
+    remaining_guests = set(guest for table in parent1 + parent2 for guest in table) - used_guests
+    for guest in remaining_guests:
+        for table in child:
+            if len(table) < params["max_per_table"]:
+                table.append(guest)
+                used_guests.add(guest)
+                break
+
+    return child
+
 while running:
     screen.fill((255, 255, 255))
 
@@ -102,6 +125,7 @@ while running:
                                 tables = seater.genetic_algorithm(
                                     guests=guests, 
                                     min_per_table=params["min_per_table"],
+                                    generations=params["iterations"],
                                     max_per_table=params["max_per_table"]
                                 )
                             current_score = -seater.calculate_cost(tables, guests)
@@ -152,6 +176,7 @@ while running:
                                 tables = seater.genetic_algorithm(
                                     guests=guests, 
                                     min_per_table=params["min_per_table"],
+                                    generations=params["iterations"],
                                     max_per_table=params["max_per_table"]
                                 )
                             current_score = -seater.calculate_cost(tables, guests)

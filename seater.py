@@ -257,95 +257,95 @@ def simulated_annealing(guests, initial_temperature, cooling_rate, iterations, m
     
     return best_tables
 
-    def create_balanced_seating(guests, min_per_table, max_per_table):
-        """
-        Create a perfectly balanced initial seating arrangement
-        """
-        guest_list = list(guests.keys())
-        total_guests = len(guest_list)
-        
-        # Calculate number of tables needed
-        num_tables = math.ceil(total_guests / max_per_table)
+def create_balanced_seating(guests, min_per_table, max_per_table):
+    """
+    Create a perfectly balanced initial seating arrangement
+    """
+    guest_list = list(guests.keys())
+    total_guests = len(guest_list)
+    
+    # Calculate number of tables needed
+    num_tables = math.ceil(total_guests / max_per_table)
 
-        if num_tables * min_per_table > len(guest_list):
-            raise ValueError("Not possible to create a disposition with those arguments.")
-        
-        # Calculate optimal size distribution
+    if num_tables * min_per_table > len(guest_list):
+        raise ValueError("Not possible to create a disposition with those arguments.")
+    
+    # Calculate optimal size distribution
+    ideal_size = total_guests / num_tables
+    base_size = math.floor(ideal_size)
+    extra = total_guests - (base_size * num_tables)
+    
+    # Ensure we're not exceeding max_per_table
+    if base_size + 1 > max_per_table:
+        num_tables += 1
+        # Recalculate
         ideal_size = total_guests / num_tables
         base_size = math.floor(ideal_size)
         extra = total_guests - (base_size * num_tables)
+    
+    # Check if we need more tables to meet the minimum size constraint
+    if base_size < min_per_table and extra < num_tables:
+        # If adding one more table would allow us to meet minimum constraints
+        test_num_tables = num_tables - 1
+        test_base_size = total_guests // test_num_tables
+        test_extra = total_guests % test_num_tables
         
-        # Ensure we're not exceeding max_per_table
-        if base_size + 1 > max_per_table:
-            num_tables += 1
-            # Recalculate
-            ideal_size = total_guests / num_tables
-            base_size = math.floor(ideal_size)
-            extra = total_guests - (base_size * num_tables)
+        if test_base_size >= min_per_table:
+            num_tables = test_num_tables
+            base_size = test_base_size
+            extra = test_extra
+    
+    # Initialize tables with balanced distribution
+    random.shuffle(guest_list)
+    tables = []
+    guest_index = 0
+    
+    # Create tables with base_size people
+    # Add one extra person to the first 'extra' tables
+    for i in range(num_tables):
+        table_size = base_size + (1 if i < extra else 0)
+        table = guest_list[guest_index:guest_index + table_size]
+        tables.append(table)
+        guest_index += table_size
+    
+    # Verify the created tables meet our constraints
+    sizes = [len(table) for table in tables]
+    print(f"Created {num_tables} balanced tables with sizes: {sizes}")
+    
+    # Ensure no tables differ by more than one person
+    max_size = max(sizes)
+    min_size = min(sizes)
+    if max_size - min_size > 1:
+        print("WARNING: Tables are not properly balanced!")
+    
+    # Try multiple random arrangements while maintaining size balance
+    best_tables = tables.copy()
+    best_score = evaluate_seating(tables, guests)
+    
+    # Try several arrangements to find a good one
+    for attempt in range(1000):  # Increased from 50 to 1000
+        # Create new arrangement by shuffling guests while keeping table sizes fixed
+        all_guests = []
+        for table in tables:
+            all_guests.extend(table)
         
-        # Check if we need more tables to meet the minimum size constraint
-        if base_size < min_per_table and extra < num_tables:
-            # If adding one more table would allow us to meet minimum constraints
-            test_num_tables = num_tables - 1
-            test_base_size = total_guests // test_num_tables
-            test_extra = total_guests % test_num_tables
+        random.shuffle(all_guests)
+        
+        new_tables = []
+        start_idx = 0
+        
+        for size in sizes:
+            table = all_guests[start_idx:start_idx + size]
+            new_tables.append(table)
+            start_idx += size
             
-            if test_base_size >= min_per_table:
-                num_tables = test_num_tables
-                base_size = test_base_size
-                extra = test_extra
+        new_score = evaluate_seating(new_tables, guests)
         
-        # Initialize tables with balanced distribution
-        random.shuffle(guest_list)
-        tables = []
-        guest_index = 0
-        
-        # Create tables with base_size people
-        # Add one extra person to the first 'extra' tables
-        for i in range(num_tables):
-            table_size = base_size + (1 if i < extra else 0)
-            table = guest_list[guest_index:guest_index + table_size]
-            tables.append(table)
-            guest_index += table_size
-        
-        # Verify the created tables meet our constraints
-        sizes = [len(table) for table in tables]
-        print(f"Created {num_tables} balanced tables with sizes: {sizes}")
-        
-        # Ensure no tables differ by more than one person
-        max_size = max(sizes)
-        min_size = min(sizes)
-        if max_size - min_size > 1:
-            print("WARNING: Tables are not properly balanced!")
-        
-        # Try multiple random arrangements while maintaining size balance
-        best_tables = tables.copy()
-        best_score = evaluate_seating(tables, guests)
-        
-        # Try several arrangements to find a good one
-        for attempt in range(1000):  # Increased from 50 to 1000
-            # Create new arrangement by shuffling guests while keeping table sizes fixed
-            all_guests = []
-            for table in tables:
-                all_guests.extend(table)
-            
-            random.shuffle(all_guests)
-            
-            new_tables = []
-            start_idx = 0
-            
-            for size in sizes:
-                table = all_guests[start_idx:start_idx + size]
-                new_tables.append(table)
-                start_idx += size
-                
-            new_score = evaluate_seating(new_tables, guests)
-            
-            if new_score > best_score:
-                best_score = new_score
-                best_tables = [table.copy() for table in new_tables]
-                        
-        return best_tables
+        if new_score > best_score:
+            best_score = new_score
+            best_tables = [table.copy() for table in new_tables]
+                    
+    return best_tables
 
 
 def calculate_theoretical_perfect_score(guests):
@@ -450,7 +450,7 @@ def tabu_search(guests, min_per_table, max_per_table, tabu_size=10, max_iteratio
     # Implement the Tabu Search algorithm here
     pass
 
-def genetic_algorithm(guests, min_per_table, max_per_table, population_size=100, generations=1000, mutation_rate=0.01):
+def genetic_algorithm(guests, min_per_table, max_per_table, population_size=10, generations=1000, mutation_rate=0.01):
     """
     Implements a Genetic Algorithm to optimize guest seating arrangements.
     """
@@ -458,28 +458,60 @@ def genetic_algorithm(guests, min_per_table, max_per_table, population_size=100,
     
     def create_initial_population():
         """Creates an initial population of balanced table arrangements."""
-        return [create_balanced_seating(guests, min_per_table, max_per_table) for _ in range(population_size)]
+        population = []
+        for _ in range(population_size):
+            tables = create_balanced_seating(guests, min_per_table, max_per_table)
+            all_guests = [guest for table in tables for guest in table]
+            if len(all_guests) != len(set(all_guests)):
+                raise ValueError("Duplicate guests detected in initial population!")
+            population.append(tables)
+        return population
     
     def select_parents(population):
-        """Selects two parents based on fitness (lower cost is better)."""
-        population_sorted = sorted(population, key=lambda x: calculate_cost(x, guests))
-        return random.choices(population_sorted[:population_size // 2], k=2)
+        """Selects two parents using tournament selection (lower cost = better)."""
+        tournament = random.sample(population, 5)  # Pick 5 random candidates
+        tournament.sort(key=lambda x: calculate_cost(x, guests))  # Sort by cost
+        return tournament[0], tournament[1]  # Pick best two
+
     
     def crossover(parent1, parent2):
-        """Performs crossover between two parents to generate a child."""
-        child = copy.deepcopy(parent1)
-        for table in child:
-            if random.random() < 0.5:
-                other_table = random.choice(parent2)
-                if len(other_table) > min_per_table and len(table) < max_per_table:
-                    table.append(other_table.pop(0))
+        """Creates a child by inheriting tables from both parents while ensuring uniqueness."""
+        child = []
+        assigned_guests = set()
+        
+        for table1, table2 in zip(parent1, parent2):
+            # Randomly pick a table from either parent
+            table = random.choice([table1, table2])
+            child.append(table)
+            assigned_guests.update(table)
+        
+        # Find missing guests
+        missing_guests = set(guests) - assigned_guests
+        
+        # Distribute missing guests into tables while keeping limits
+        for guest in missing_guests:
+            eligible_tables = [t for t in child if len(t) < max_per_table]
+            if eligible_tables:
+                random.choice(eligible_tables).append(guest)
+            else:
+                child.append([guest])  # Create a new table if needed
+        
         return child
+
     
     def mutate(individual):
-        """Applies mutation to an individual to introduce diversity."""
-        if random.random() < mutation_rate:
-            return create_neighbor(individual, min_per_table, max_per_table)
+        """Randomly swaps guests between tables to introduce diversity."""
+        if random.random() > mutation_rate:
+            return individual  # No mutation
+        
+        table1, table2 = random.sample(individual, 2)
+        
+        if table1 and table2:
+            guest1, guest2 = random.choice(table1), random.choice(table2)
+            table1[table1.index(guest1)], table2[table2.index(guest2)] = guest2, guest1
+        
         return individual
+
  
     population = create_initial_population()
     
@@ -498,6 +530,3 @@ def genetic_algorithm(guests, min_per_table, max_per_table, population_size=100,
     best_tables = min(population, key=lambda x: calculate_cost(x, guests))
     print(f"Best tables found: Cost = {calculate_cost(best_tables, guests)}")
     return best_tables
-
-
-    

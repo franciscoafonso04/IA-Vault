@@ -20,11 +20,15 @@ params = {
     "initial_temperature": 100,
     "cooling_rate": 0.95,
     "iterations": 1000,
+    "mutation_rate": 0.01,
+    "population_size": 50,
+    "tabu_size": 10,
+    "max_flips": 1000,
     "cooling_type": "exponential",
     "algorithm": "Simulated Annealing"
 }
 
-guests = file_handler.read_guest_preferences("guest_list.csv")
+guests = file_handler.read_guest_preferences("test.csv")
 tables = seater.create_balanced_seating(guests, params["min_per_table"], params["max_per_table"])  
 current_score = None
 
@@ -113,13 +117,16 @@ while running:
                                 tables = seater.cnf_walksat(
                                     guests=guests, 
                                     min_per_table=params["min_per_table"],
-                                    max_per_table=params["max_per_table"]
+                                    max_per_table=params["max_per_table"],
+                                    max_flips=params["max_flips"]
                                 )
                             elif params["algorithm"] == "Tabu Search":
                                 tables = seater.tabu_search(
                                     guests=guests, 
                                     min_per_table=params["min_per_table"],
-                                    max_per_table=params["max_per_table"]
+                                    max_per_table=params["max_per_table"],
+                                    tabu_size=params["tabu_size"],
+                                    iterations=params["iterations"],
                                 )
                             elif params["algorithm"] == "Genetic Algorithm":
                                 tables = seater.genetic_algorithm(
@@ -212,7 +219,11 @@ while running:
                                         "max_per_table": (1, 1, 20),
                                         "initial_temperature": (10, 10, 1000),
                                         "cooling_rate": (0.005, 0.01, 1.0),
-                                        "iterations": (100, 100, 10000)
+                                        "iterations": (100, 100, 10000),
+                                        "mutation_rate": (0.01, 0.01, 1.0),  # Add mutation_rate with appropriate step, min, and max
+                                        "population_size": (10, 10, 500),    # Add population_size if needed
+                                        "tabu_size": (1, 1, 50),             # Add tabu_size if needed
+                                        "max_flips": (100, 100, 10000),      # Add max_flips if needed
                                     }
                                     step, min_val, max_val = steps[key]
                                     new_value = round(params[key] + (operation * step), 3)

@@ -446,7 +446,7 @@ def cnf_walksat(guests, min_per_table, max_per_table, max_flips=10000):
     return None
 
 
-def tabu_search(guests, min_per_table, max_per_table, tabu_size=10, max_iterations=1000):
+def tabu_search(guests, min_per_table, max_per_table, tabu_size=10, iterations=1000):
     # Implement the Tabu Search algorithm here
     pass
 

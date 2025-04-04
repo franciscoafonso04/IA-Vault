@@ -45,41 +45,73 @@ def draw_parameters_menu(screen, font, selected_index):
 
 
 def draw_parameter_selection(screen, font, params, selected_index):
+    """
+    Draws the parameter selection screen, with the algorithm as the top-most option.
+    Dynamically updates the remaining options based on the selected algorithm.
+    """
     screen.fill((240, 248, 255))
     title = font.render("Adjust Seating Parameters", True, (0, 0, 0))
     screen.blit(title, (20, 20))
     y = 80
     buttons = []
-    
-    # Configurações para cada parâmetro
-    parameters = [
-        ("Min per Table", "min_per_table", 1, 20),
-        ("Max per Table", "max_per_table", 1, 20),
-        ("Initial Temperature", "initial_temperature", 1, 1000),
-        ("Cooling Rate", "cooling_rate", 0.01, 1.0),
-        ("Iterations", "iterations", 100, 10000),
-        ("Cooling Type", "cooling_type", None, None),
-        ("Algorithm", "algorithm", None, None)
-    ]
-    for idx, (label, key, min_val, max_val) in enumerate(parameters):
-        # Desenha o rótulo
+
+    # Define the parameters for each algorithm
+    algorithm_parameters = {
+        "Simulated Annealing": [
+            ("Initial Temperature", "initial_temperature", 1, 1000),
+            ("Cooling Rate", "cooling_rate", 0.01, 1.0),
+            ("Iterations", "iterations", 100, 10000),
+            ("Cooling Type", "cooling_type", None, None),
+        ],
+        "CNF + WalkSAT": [
+            ("Max Flips", "max_flips", 100, 10000),
+        ],
+        "Tabu Search": [
+            ("Tabu Size", "tabu_size", 1, 50),
+            ("Max Iterations", "iterations", 100, 10000),
+        ],
+        "Genetic Algorithm": [
+            ("Population Size", "population_size", 10, 500),
+            ("Generations", "iterations", 100, 10000),
+            ("Mutation Rate", "mutation_rate", 0.01, 1.0),
+        ],
+    }
+
+    # Draw the algorithm selection first
+    algorithm_label = font.render("Algorithm:", True, (0, 0, 0))
+    screen.blit(algorithm_label, (50, y))
+    algorithm_rect = pygame.Rect(250, y, 200, 30)
+    pygame.draw.rect(screen, (255, 255, 255), algorithm_rect)
+    pygame.draw.rect(screen, (0, 0, 0), algorithm_rect, 2)
+    algorithm_text = font.render(params["algorithm"], True, (0, 0, 0))
+    screen.blit(algorithm_text, (260, y + 5))
+    buttons.append((algorithm_rect, "algorithm", None))
+    y += 50
+
+    # Get the parameters for the selected algorithm
+    selected_algorithm = params["algorithm"]
+    if selected_algorithm in algorithm_parameters:
+        parameters = algorithm_parameters[selected_algorithm]
+    else:
+        parameters = []
+
+    # Draw the parameters for the selected algorithm
+    for label, key, min_val, max_val in parameters:
+        # Draw the label
         text = font.render(f"{label}:", True, (0, 0, 0))
         screen.blit(text, (50, y))
-        # Desenha o valor atual
+
+        # Draw the value box
         value_rect = pygame.Rect(250, y, 150, 30)
         pygame.draw.rect(screen, (255, 255, 255), value_rect)
         pygame.draw.rect(screen, (0, 0, 0), value_rect, 2)
-        
-        value_text = font.render(str(params[key]), True, (0, 0, 0))
+
+        # Draw the value
+        value_text = font.render(str(params.get(key, "")), True, (0, 0, 0))
         screen.blit(value_text, (260, y + 5))
-        
-        if key == "algorithm":
-            cycle_button = pygame.draw.rect(screen, (200, 200, 200), (200, y, 250, 30))
-            current_type = params[key]
-            type_text = font.render(f"{current_type}", True, (0, 0, 0))
-            screen.blit(type_text, (210, y))
-            buttons.append((cycle_button, key, None))
-        else:
+
+        # Add buttons for increment/decrement if applicable
+        if min_val is not None and max_val is not None:
             dec_button = pygame.draw.rect(screen, (200, 200, 200), (200, y, 40, 30))
             dec_text = font.render("-", True, (0, 0, 0))
             screen.blit(dec_text, (212, y))
@@ -88,16 +120,16 @@ def draw_parameter_selection(screen, font, params, selected_index):
             screen.blit(inc_text, (422, y))
             buttons.append((dec_button, key, -1))
             buttons.append((inc_button, key, 1))
-        
+
         y += 50
-    
-    # Botões de navegação
+
+    # Draw navigation buttons
     back_button = pygame.draw.rect(screen, (255, 99, 71), (50, y + 20, 100, 40))
-    start_button = pygame.draw.rect(screen, (50, 205, 50), (screen.get_width()-150, y + 20, 100, 40))
-    
+    start_button = pygame.draw.rect(screen, (50, 205, 50), (screen.get_width() - 150, y + 20, 100, 40))
+
     screen.blit(font.render("Back", True, (255, 255, 255)), (70, y + 30))
-    screen.blit(font.render("Start", True, (255, 255, 255)), (screen.get_width()-130, y + 30))
-    
+    screen.blit(font.render("Start", True, (255, 255, 255)), (screen.get_width() - 130, y + 30))
+
     return buttons, back_button, start_button
 
 

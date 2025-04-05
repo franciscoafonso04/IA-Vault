@@ -5,11 +5,6 @@ import seater
 import file_handler
 
 def run_benchmark(guests, params, algorithm, n_runs=10):
-    from datetime import datetime
-    import matplotlib.pyplot as plt
-    import os
-    import seater
-    import file_handler
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     benchmark_folder = os.path.join("benchmarks", f"benchmark_{timestamp}_{algorithm.replace(' ', '_').lower()}")

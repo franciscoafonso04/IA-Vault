@@ -5,31 +5,28 @@ from datetime import datetime
 import plotting
 import file_handler
 
+# ============================================================================================================================================================
+# Função: calculate_cost
+# Descrição: Calcula o custo total de uma disposição de convidados.
+# Penaliza estar com quem se quer evitar e recompensa estar com quem se prefere.
+# Penaliza também mesas desequilibradas.
+# ============================================================================================================================================================
+
 def calculate_cost(tables, guests):
-    """
-    Calculate the cost (energy) of a seating arrangement.
-    Lower cost means better arrangement.
-
-    The cost is calculated based on:
-    - Rewarding seating guests with those they prefer.
-    - Penalizing seating guests with those they want to avoid.
-    - Adding penalties for unbalanced table sizes.
-    """
-
-    cost = 0
     
-    # Check each table
+    cost = 0
+    # Itera sobre cada mesa
     for table in tables:
         for guest in table:
             preferences = guests[guest]
             
-            # Penalty for being seated with someone the guest wants to avoid.
+            # Penaliza por estar com quem se quer evitar.
             cost += sum(20 for avoided in preferences['avoids'] if avoided in table)
 
-            # Reward for being seated with a preferred guest.
+            # Recompensa por estar com quem se prefere.
             cost -= sum(10 for preferred in preferences['prefers'] if preferred in table)
                     
-    # Add much stronger penalty for unbalanced tables.
+    # Penaliza mesas desequilibradas
     table_sizes = [len(table) for table in tables]
     if not table_sizes:
         return cost
@@ -38,73 +35,100 @@ def calculate_cost(tables, guests):
     max_size = max(table_sizes)
     min_size = min(table_sizes)
     
-    # Extreme penalty if max and min differ by more than 1
+    # Penaliza mesas com mais de 1 convidado de diferença
     if max_size - min_size > 1:
-        cost += (max_size - min_size) * 200 # Scalable Penalty
+        cost += (max_size - min_size) * 200 # Penalidade alta para mesas muito desequilibradas
     
-    # Normal balance penalty proportional to deviation from the average table size.
+    # Adiciona penalidade para mesas com tamanhos muito diferentes da média
     for size in table_sizes:
-        cost += abs(size - avg_size) * 20  # Higher penalty for unbalanced tables
+        cost += abs(size - avg_size) * 20  # Penalidade proporcional à diferença do tamanho médio
                     
     return cost
+
+# ========================================================================================================================================================
+# Função: calculate_tables_needed
+# Descrição: Calcula o número de mesas necessárias dado o número de convidados.
+# ========================================================================================================================================================
 
 def calculate_tables_needed(num_guests, seats_per_table=6):
     return math.ceil(num_guests / seats_per_table)
 
+# ========================================================================================================================================================
+# Função: evaluate_seating
+# Descrição: Avalia uma disposição de mesas atribuindo uma pontuação positiva
+# por estar com preferidos e negativa por estar com evitados.
+# ========================================================================================================================================================
+
 def evaluate_seating(tables, guests):
-    """
-    Evaluate how good a seating arrangement is based on guest preferences.
-    Higher score means better arrangement.
-    """
+    
     score = 0
     
-    # Check each table
+    # Para cada mesa
     for table in tables:
-        # For each guest at this table
+        # Para cada convidado na mesa
         for guest in table:
             preferences = guests[guest]
             
-            # Check if preferred people are at same table
+            # Checka se pessoas preferidas estão na mesma mesa (bonus)
             for preferred in preferences.get('prefers',[]):
                 if preferred in table:
-                    score += 10  # High positive score for respecting "together" preferences
+                    score += 10  # Aumenta a pontuação se preferidos estão juntos
             
-            # Check if avoided people are at same table (penalty)
+            # Checka se pessoas evitadas estão na mesma mesa (penalidade)
             for avoided in preferences.get('avoids',[]):
                 if avoided in table:
-                    score -= 20  # High penalty for putting people who should be apart together
+                    score -= 20  # Diminui a pontuação se evitados estão juntos
     
     return score
 
+# ========================================================================================================================================================
+# Função: calculate_theoretical_perfect_score
+# Descrição: Calcula o score perfeito se todos os convidados estivessem com os
+# seus preferidos.
+# ========================================================================================================================================================
 
+def calculate_theoretical_perfect_score(guests):
+    
+    perfect_score = 0
+    
+    # Para cada convidado
+    for guest, preferences in guests.items():
+        # Contar quantas pessoas preferidas quer que fiquem na mesma mesa que ele
+        preferred_count = len(preferences['prefers'])
+        # Adiciona 10 pontos por cada preferido
+        perfect_score += preferred_count * 10
+    
+    return perfect_score
+
+# ========================================================================================================================================================
+# Função: create_neighbor
+# Descrição: Gera uma nova solução válida a partir da atual mudando convidados
+# entre mesas de forma a manter os limites.
+# ========================================================================================================================================================
 
 def create_neighbor(tables, min_per_table, max_per_table):
-    """
-    Create a neighbor solution by making a small change to the current solution
-    while maintaining balanced tables.
-    Returns a new tables arrangement without modifying the original.
-    """
-    new_tables = copy.deepcopy(tables)
     
-    # Get current table sizes
-    table_sizes = [len(table) for table in new_tables]
-    min_size = min(table_sizes)
-    max_size = max(table_sizes)
+    new_tables = copy.deepcopy(tables)                      # Cria uma cópia da disposição atual
     
-    # If tables are severely unbalanced, force balancing
+    table_sizes = [len(table) for table in new_tables]      # Obtém o número de mesas
+    min_size = min(table_sizes)                             # Obtém o tamanho mínimo   
+    max_size = max(table_sizes)                             # Obtém o tamanho máximo    
+    
+    # Se a diferença entre o tamanho máximo e mínimo for maior que 1, força a mudança
     if max_size - min_size > 1:
-        # Find the largest and smallest tables
+
+        # Identifica as mesas maiores e menores
         largest_tables = [i for i, size in enumerate(table_sizes) if size == max_size]
         smallest_tables = [i for i, size in enumerate(table_sizes) if size == min_size]
         
-        # Force move from largest to smallest
+        # Escolhe aleatoriamente uma mesa maior e uma menor
         from_table = random.choice(largest_tables)
         to_table = random.choice(smallest_tables)
         
-        if new_tables[from_table]:  # Make sure source table is not empty
+        if new_tables[from_table]:  # Verifica se a mesa não está vazia
             guest_index = random.randint(0, len(new_tables[from_table]) - 1)
             guest = new_tables[from_table].pop(guest_index)
-            new_tables[to_table].append(guest)
+            new_tables[to_table].append(guest)      # Adiciona o convidado à mesa menor
 
         return new_tables
     
@@ -114,24 +138,25 @@ def create_neighbor(tables, min_per_table, max_per_table):
             len(new_tables[from_table]) > min_per_table and
             len(new_tables[to_table]) < max_per_table
         )
-    # If tables are balanced (diff ≤ 1), use normal operations
+    
+    # Se não houver mesas desequilibradas, escolhe aleatoriamente entre swap e move
     operation = random.choice(['swap', 'move'])
     
     if operation == 'swap' and len(new_tables) >= 2:
-        # Swap: Choose two random guests on different tables and swap them
+        # Swap: Troca dois convidados entre mesas diferentes
         table1_index = random.randint(0, len(new_tables) - 1)
         table2_index = random.randint(0, len(new_tables) - 1)
         
-        # Ensure different tables
+        # Mantém a condição de que as mesas não sejam iguais
         while table1_index == table2_index:
             table2_index = random.randint(0, len(new_tables) - 1)
             
-        # Ensure neither table is empty
+        # Verifica se as mesas não estão vazias
         if new_tables[table1_index] and new_tables[table2_index]:
             guest1_index = random.randint(0, len(new_tables[table1_index]) - 1)
             guest2_index = random.randint(0, len(new_tables[table2_index]) - 1)
             
-            # Swap guests - this preserves table sizes
+            # Troca os convidados entre as mesas
             new_tables[table1_index][guest1_index], new_tables[table2_index][guest2_index] = \
                 new_tables[table2_index][guest2_index], new_tables[table1_index][guest1_index]
     
@@ -140,155 +165,91 @@ def create_neighbor(tables, min_per_table, max_per_table):
         to_table = random.randint(0, len(new_tables) - 1)
         if from_table != to_table and new_tables[from_table]:
         
-        # Check capacity constraints before moving:
+        # Move: Move um convidado de uma mesa para outra
             if is_valid_move(from_table, to_table):
                 guest_index = random.randint(0, len(new_tables[from_table]) - 1)
                 guest = new_tables[from_table].pop(guest_index)
                 new_tables[to_table].append(guest)
 
-    # Reassures that every table respects the mins and maxs.
+    # Verifica se as mesas resultantes ainda estão dentro dos limites
     if any(len(table) < min_per_table or len(table) > max_per_table for table in new_tables):
         return tables 
     
     return new_tables
 
+# ========================================================================================================================================================
+# Função: validate_parameters
+# Descrição: Valida os parâmetros fornecidos para garantir que fazem sentido.
+# Lança exceções se houver algo inválido.
+# ========================================================================================================================================================
 
 def validate_parameters(params, num_guests):
-    """
-    Validate the parameters to ensure they are logical and within acceptable ranges.
     
-    Args:
-        params (dict): Dictionary containing the parameters.
-        num_guests (int): Total number of guests.
-    
-    Raises:
-        ValueError: If any parameter is invalid.
-    """
     # Verifica min_per_table e max_per_table
     if not (isinstance(params["min_per_table"], int) and params["min_per_table"] > 0):
-        raise ValueError("min_per_table must be a positive integer.")
+        raise ValueError("min_per_table deve ser um inteiro positivo.")
     if not (isinstance(params["max_per_table"], int) and params["max_per_table"] > 0):
-        raise ValueError("max_per_table must be a positive integer.")
+        raise ValueError("max_per_table deve ser um inteiro positivo.")
     if params["max_per_table"] < params["min_per_table"]:
-        raise ValueError("max_per_table must be greater than or equal to min_per_table.")
+        raise ValueError("max_per_table deve ser maior ou igual a min_per_table.")
     
     # Verifica se o número de mesas é viável
     min_tables_needed = math.ceil(num_guests / params["max_per_table"])
     max_tables_needed = math.ceil(num_guests / params["min_per_table"])
     if min_tables_needed > max_tables_needed:
-        raise ValueError("Invalid table sizes: Not possible to seat all guests with the given min_per_table and max_per_table.")
+        raise ValueError("Tamanho inviável para as mesas. min_per_table e max_per_table não permitem acomodar todos os convidados.")
     
     # Verifica initial_temperature
     if not (isinstance(params["initial_temperature"], (int, float)) and params["initial_temperature"] > 0):
-        raise ValueError("initial_temperature must be a positive number.")
+        raise ValueError("initial_temperature deve ser um número positivo.")
     
     # Verifica cooling_rate
     if not (isinstance(params["cooling_rate"], (int, float)) and 0 < params["cooling_rate"] < 1):
-        raise ValueError("cooling_rate must be between 0 and 1.")
+        raise ValueError("cooling_rate deve ser um número entre 0 e 1.")
     
     # Verifica iterations
     if not (isinstance(params["iterations"], int) and params["iterations"] > 0):
-        raise ValueError("iterations must be a positive integer.")
+        raise ValueError("iterations deve ser um inteiro positivo.")
     
     # Verifica cooling_type
     if params["cooling_type"] not in ["exponential", "linear", "logarithmic"]:
-        raise ValueError("cooling_type must be 'exponential', 'linear', or 'logarithmic'.")
-    
-def simulated_annealing(guests, initial_temperature, cooling_rate, iterations, min_per_table, max_per_table, cooling_type, output_folder=None):
-    """Apply simulated annealing to find an optimal seating arrangement."""
-    
-    # Initialize metrics collection
-    metrics = {
-        'timestamp': datetime.now().strftime("%Y%m%d_%H%M%S"),
-        'iterations': [],
-        'costs': [],
-        'best_costs': [],
-        'temperatures': []
-    }
-    
-    # Create initial solution
-    tables = create_balanced_seating(guests, min_per_table, max_per_table)
-    current_cost = calculate_cost(tables, guests)
-    
-    best_tables = copy.deepcopy(tables)
-    best_cost = current_cost
-    temperature = initial_temperature
-    
-    for i in range(iterations):
-        # Record metrics
-        metrics['iterations'].append(i)
-        metrics['costs'].append(current_cost)
-        metrics['best_costs'].append(best_cost)
-        metrics['temperatures'].append(temperature)
-        
-        # Generate neighbor solution
-        neighbor_tables = create_neighbor(tables, min_per_table, max_per_table)
-        neighbor_cost = calculate_cost(neighbor_tables, guests)
-        
-        # Calculate delta cost
-        delta_cost = neighbor_cost - current_cost
-        
-        # Decide whether to accept the new solution
-        if delta_cost < 0 or random.random() < math.exp(-delta_cost / temperature):
-            tables = neighbor_tables
-            current_cost = neighbor_cost
-            
-            # Update best solution if this is better
-            if current_cost < best_cost:
-                best_tables = copy.deepcopy(tables)
-                best_cost = current_cost
-        
-        # Cool down temperature
-        if cooling_type == "exponential":
-            temperature *= cooling_rate
-        elif cooling_type == "linear":
-            temperature -= initial_temperature / iterations
-        elif cooling_type == "logarithmic":
-            temperature = initial_temperature / (1 + math.log(1 + i))
+        raise ValueError("cooling_type deve ser 'exponential', 'linear' ou 'logarithmic'.")
 
-        if temperature < 0.01:
-            break
-    
-    if output_folder:
-        plotting.plot_performance_metrics(metrics, save_dir=output_folder)
-    else:
-        plotting.plot_performance_metrics(metrics)
-    
-    # Print final results
-    final_sizes = [len(table) for table in best_tables]
-    print(f"Simulated annealing completed. Best cost: {round(float(best_cost),2)}, Table sizes: {final_sizes}")
-    
-    return best_tables
+# ========================================================================================================================================================
+# Função: create_balanced_seating
+# Descrição: Cria uma disposição inicial equilibrada entre mesas. Tenta maximizar
+# preferências já de início.
+# ========================================================================================================================================================
 
 def create_balanced_seating(guests, min_per_table, max_per_table):
-    """
-    Create a perfectly balanced initial seating arrangement
-    """
-    guest_list = list(guests.keys())
-    total_guests = len(guest_list)
     
-    # Calculate number of tables needed
+    # Cria uma lista de convidados e calcula o seu número total de convidados
+    guest_list = list(guests.keys())    
+    total_guests = len(guest_list)  
+    
+    # Calcula o número de mesas necessárias
     num_tables = math.ceil(total_guests / max_per_table)
 
     if num_tables * min_per_table > len(guest_list):
-        raise ValueError("Not possible to create a disposition with those arguments.")
+        raise ValueError("Número de mesas insuficiente para acomodar todos os convidados.")
     
-    # Calculate optimal size distribution
+    # Calcula o tamanho ideal de cada mesa
     ideal_size = total_guests / num_tables
     base_size = math.floor(ideal_size)
     extra = total_guests - (base_size * num_tables)
     
-    # Ensure we're not exceeding max_per_table
+    # Assegura que o número de mesas não excede o máximo permitido
     if base_size + 1 > max_per_table:
         num_tables += 1
-        # Recalculate
+        # Recalcula o tamanho ideal
         ideal_size = total_guests / num_tables
         base_size = math.floor(ideal_size)
         extra = total_guests - (base_size * num_tables)
     
-    # Check if we need more tables to meet the minimum size constraint
+    # Checka se o número de mesas é viável
     if base_size < min_per_table and extra < num_tables:
-        # If adding one more table would allow us to meet minimum constraints
+        
+        # Se adicionar uma mesa extra não violar o limite mínimo por mesa
         test_num_tables = num_tables - 1
         test_base_size = total_guests // test_num_tables
         test_extra = total_guests % test_num_tables
@@ -298,36 +259,27 @@ def create_balanced_seating(guests, min_per_table, max_per_table):
             base_size = test_base_size
             extra = test_extra
     
-    # Initialize tables with balanced distribution
+    # Inicializa a lista de mesas
     random.shuffle(guest_list)
     tables = []
     guest_index = 0
     
-    # Create tables with base_size people
-    # Add one extra person to the first 'extra' tables
+    # Cria as mesas com o número ideal de convidados
     for i in range(num_tables):
         table_size = base_size + (1 if i < extra else 0)
         table = guest_list[guest_index:guest_index + table_size]
         tables.append(table)
         guest_index += table_size
     
-    # Verify the created tables meet our constraints
+    # Verifica se o número de mesas não excede o máximo permitido
     sizes = [len(table) for table in tables]
-    print(f"Created {num_tables} balanced tables with sizes: {sizes}")
     
-    # Ensure no tables differ by more than one person
-    max_size = max(sizes)
-    min_size = min(sizes)
-    if max_size - min_size > 1:
-        print("WARNING: Tables are not properly balanced!")
-    
-    # Try multiple random arrangements while maintaining size balance
     best_tables = tables.copy()
     best_score = evaluate_seating(tables, guests)
     
-    # Try several arrangements to find a good one
-    for attempt in range(1000):  # Increased from 50 to 1000
-        # Create new arrangement by shuffling guests while keeping table sizes fixed
+    # Experimenta várias disposições para encontrar uma boa
+    for attempt in range(1000):  
+        # Cria uma nova disposição aleatória
         all_guests = []
         for table in tables:
             all_guests.extend(table)
@@ -350,33 +302,79 @@ def create_balanced_seating(guests, min_per_table, max_per_table):
                     
     return best_tables
 
+# ========================================================================================================================================================
+# Função: simulated_annealing
+# Descrição: Implementa o algoritmo de Simulated Annealing para encontrar uma
+# disposição de convidados com custo mínimo. Guarda métricas e gráficos.
+# ========================================================================================================================================================
 
-def calculate_theoretical_perfect_score(guests):
-    """
-    Calculate the theoretical perfect score if all seating preferences were satisfied.
+def simulated_annealing(guests, initial_temperature, cooling_rate, iterations, min_per_table, max_per_table, cooling_type, output_folder=None):
     
-    Args:
-        guests: Dictionary of guest preferences
+    # Inicializa parâmetros
+    metrics = {
+        'timestamp': datetime.now().strftime("%Y%m%d_%H%M%S"),
+        'iterations': [],
+        'costs': [],
+        'best_costs': [],
+        'temperatures': []
+    }
+    
+    tables = create_balanced_seating(guests, min_per_table, max_per_table)      # Cria uma disposição inicial
+    current_cost = calculate_cost(tables, guests)                               # Calcula o custo inicial
+    best_tables = copy.deepcopy(tables)                                         # Guarda a melhor disposição        
+    best_cost = current_cost                                                    # Guarda o melhor custo 
+    temperature = initial_temperature                                           # Inicializa a temperatura
+    
+    for i in range(iterations):
+        # Guarda métricas
+        metrics['iterations'].append(i)
+        metrics['costs'].append(current_cost)
+        metrics['best_costs'].append(best_cost)
+        metrics['temperatures'].append(temperature)
         
-    Returns:
-        A theoretical perfect score
-    """
-    perfect_score = 0
+        # Gera um vizinho
+        neighbor_tables = create_neighbor(tables, min_per_table, max_per_table)
+        neighbor_cost = calculate_cost(neighbor_tables, guests)
+        
+        # Calcula a diferença de custo
+        delta_cost = neighbor_cost - current_cost
+        
+        # Decide se aceita o vizinho
+        if delta_cost < 0 or random.random() < math.exp(-delta_cost / temperature):
+            tables = neighbor_tables
+            current_cost = neighbor_cost
+            
+            # Atualiza a melhor disposição se o custo for melhor
+            if current_cost < best_cost:
+                best_tables = copy.deepcopy(tables)
+                best_cost = current_cost
+        
+        # Atualiza a temperatura
+        if cooling_type == "exponential":
+            temperature *= cooling_rate
+        elif cooling_type == "linear":
+            temperature -= initial_temperature / iterations
+        elif cooling_type == "logarithmic":
+            temperature = initial_temperature / (1 + math.log(1 + i))
+
+        if temperature < 0.01:  # Limite mínimo para a temperatura
+            break
     
-    # For each guest
-    for guest, preferences in guests.items():
-        # Count how many preferred people they have
-        preferred_count = len(preferences['prefers'])
-        # Each preferred match contributes +10 to score (higher is better)
-        perfect_score += preferred_count * 10
+    # Cria a pasta de resultados
+    if output_folder:
+        plotting.plot_performance_metrics(metrics, save_dir=output_folder)
+    else:
+        plotting.plot_performance_metrics(metrics)
     
-    return perfect_score
+    return best_tables
+
+# ========================================================================================================================================================
+# Função: genetic_algorithm
+# Descrição: Algoritmo genético com seleção, crossover, mutação e elitismo.
+# Requer tuning para resultados mais estáveis.
+# ========================================================================================================================================================
 
 def genetic_algorithm(guests, min_per_table, max_per_table, population_size=10, generations=1000, mutation_rate=0.01):
-    """
-    Implements a Genetic Algorithm to optimize guest seating arrangements.
-    """
-    import random
     
     def create_initial_population():
         """Creates an initial population of balanced table arrangements."""

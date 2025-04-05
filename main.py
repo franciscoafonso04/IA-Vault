@@ -5,15 +5,19 @@ import ui
 import os
 pygame.init()
 
+# Tamanho da janela
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
-MENU, VIEW_PREFERENCES, VIEW_SEATING, PARAMETER_SELECTION = "menu", "preferences", "seating", "parameters"
-state = MENU
 
+# Estados possíveis da interface
+MENU, VIEW_PREFERENCES, VIEW_SEATING, PARAMETER_SELECTION = "menu", "preferences", "seating", "parameters"
+state = MENU    # Estado inicial é o menu principal
+
+# Inicializar a janela
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Wedding Seater Planner")
 font = pygame.font.Font(None, 28)
 
-# Default parameters
+# Parâmetros iniciais (default) do algoritmo
 params = {
     "min_per_table": 2,
     "max_per_table": 8,
@@ -22,24 +26,25 @@ params = {
     "iterations": 1000,
     "mutation_rate": 0.01,
     "population_size": 50,
-    "tabu_size": 10,
-    "max_flips": 1000,
     "cooling_type": "exponential",
-    "algorithm": "Simulated Annealing"
+    "algorithm": "Simulated Annealing"  # Algoritmo selecionado por default
 }
 
+# Ler os dados dos convidados
 guests = file_handler.read_guest_preferences("guest_list.csv")
+
+# Gerar uma disposição inicial aleatória e equilibrada
 tables = seater.create_balanced_seating(guests, params["min_per_table"], params["max_per_table"])  
-current_score = None
 
-running = True
+current_score = None  # Vai ser calculado após correr o algoritmo
 
+running = True  # Controla o loop principal da aplicação
 
-
+# Loop principal do jogo (Pygame)
 while running:
     screen.fill((255, 255, 255))
 
-    # Draw the screen according to the current state
+    # Desenha o ecrã consoante o estado atual
     if state == MENU:
         button1_rect, button2_rect = ui.draw_main_menu(screen, font)
     elif state == VIEW_PREFERENCES:
@@ -50,19 +55,20 @@ while running:
         selected_index = 0
         param_buttons, back_button, start_button, benchmark_button, compare_button = ui.draw_parameter_selection(screen, font, params, selected_index)
 
-    # Process events
+    # Processa os eventos do utilizador
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
+            running = False     # Fecha a aplicação
             
         elif event.type == pygame.MOUSEBUTTONDOWN:
+            # Scroll do rato para tabelas grandes
             if event.button in (4, 5):  # Scroll wheel
                 if state == VIEW_PREFERENCES:
                     ui.handle_scroll_event(event, 'preferences')
                 elif state == VIEW_SEATING:
                     ui.handle_scroll_event(event, 'seating')
                     
-            elif event.button == 1:  # Left click
+            elif event.button == 1:  # Clique esquerdo
                 mouse_pos = event.pos
                 
                 if state == MENU:
@@ -79,6 +85,7 @@ while running:
                     if back_button.collidepoint(mouse_pos):
                         state = MENU
                     elif retry_button.collidepoint(mouse_pos):
+                        # Repetir o algoritmo com os mesmos parâmetros
                         try:
                             seater.validate_parameters(params, len(guests))
                             print("Retrying with parameters:", params)
@@ -108,18 +115,19 @@ while running:
                                     max_per_table=params["max_per_table"],
                                     iterations=params["iterations"]
                                 )
+
                             current_score = -seater.calculate_cost(tables, guests)
                             perfect_score = seater.calculate_theoretical_perfect_score(guests)
                             optimality = (current_score / perfect_score * 100) if perfect_score > 0 else 0
                             
-                            # Save the seating arrangement with metrics
+                            # Guardar o resultado da disposição gerada
                             file_handler.write_seating_arrangement(
                                 tables, 
                                 filename=os.path.join(output_folder, "seating.txt"),
                                 current_score=current_score,
                                 perfect_score=perfect_score,
                                 optimality=optimality,
-                                algorithm=params["algorithm"]  # Add this line
+                                algorithm=params["algorithm"]  
                             )
                         except Exception as e:
                             print(f"Error: {e}")
@@ -128,14 +136,15 @@ while running:
                     if back_button.collidepoint(mouse_pos):
                         state = MENU
                     elif benchmark_button.collidepoint(mouse_pos):
-                        print("Benchmarking in progress...")
+                        # Benchmark do algoritmo selecionado
                         try:
                             seater.validate_parameters(params, len(guests))
-                            from benchmark import run_benchmark  # se colocares isto num ficheiro benchmark.py
+                            from benchmark import run_benchmark  
                             run_benchmark(guests, params, params["algorithm"], n_runs=10)
                         except Exception as e:
                             print(f"Benchmark error: {e}")
                     elif compare_button.collidepoint(mouse_pos):
+                        # Comparar algoritmos
                         try:
                             from benchmark import compare_algorithms
                             seater.validate_parameters(params, len(guests))
@@ -144,6 +153,7 @@ while running:
                         except Exception as e:
                             print(f"Erro ao comparar algoritmos: {e}")
                     elif start_button.collidepoint(mouse_pos):
+                        # Iniciar o algoritmo selecionado
                         try:
                             seater.validate_parameters(params, len(guests))
                             print("Starting with parameters:", params)
@@ -178,19 +188,20 @@ while running:
                             perfect_score = seater.calculate_theoretical_perfect_score(guests)
                             optimality = (current_score / perfect_score * 100) if perfect_score > 0 else 0
                             
-                            # Save the seating arrangement with metrics
+                            # Guardar o resultado
                             file_handler.write_seating_arrangement(
                                 tables, 
                                 filename= os.path.join(output_folder, "seating.txt"),
                                 current_score=current_score,
                                 perfect_score=perfect_score,
                                 optimality=optimality,
-                                algorithm=params["algorithm"]  # Add this line
+                                algorithm=params["algorithm"] 
                             )
                             state = VIEW_SEATING
                         except Exception as e:
                             print(f"Error: {e}")
                     else:
+                        # Detetar cliques nos botões dos parâmetros
                         for btn in param_buttons:
                             rect, key, operation = btn
                             if rect.collidepoint(mouse_pos):
@@ -203,6 +214,7 @@ while running:
                                     current_idx = algorithms.index(params[key])
                                     params[key] = algorithms[(current_idx + 1) % len(algorithms)]
                                 else:
+                                    # Incrementar ou decrementar o valor dos parâmetros numéricos
                                     steps = {
                                         "min_per_table": (1, 1, 20),
                                         "max_per_table": (1, 1, 20),
@@ -215,6 +227,8 @@ while running:
                                     step, min_val, max_val = steps[key]
                                     new_value = round(params[key] + (operation * step), 3)
                                     params[key] = max(min(new_value, max_val), min_val)
+    # Atualiza o ecrã
     pygame.display.flip()
 
+# Termina a aplicação
 pygame.quit()

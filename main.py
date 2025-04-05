@@ -3,6 +3,7 @@ import file_handler
 import seater
 import ui
 import os
+import benchmark
 pygame.init()
 
 # Tamanho da janela
@@ -80,6 +81,11 @@ while running:
                         new_guest_name += event.unicode
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button in (4, 5):  # Scroll wheel
+                if state == VIEW_PREFERENCES:
+                    ui.handle_scroll_event(event, 'preferences')
+                elif state == VIEW_SEATING:
+                    ui.handle_scroll_event(event, 'seating')
             if event.button == 1:  # Clique esquerdo
                 mouse_pos = event.pos
 
@@ -189,10 +195,9 @@ while running:
                             print(f"Benchmark error: {e}")
                     elif compare_button.collidepoint(mouse_pos):
                         try:
-                            from benchmark import compare_algorithms
                             seater.validate_parameters(params, len(guests))
                             algorithms_to_test = ["Simulated Annealing", "Genetic Algorithm", "Hill Climbing"]
-                            compare_algorithms(guests, algorithms_to_test, params, n_runs=10)
+                            benchmark.compare_algorithms(guests, algorithms_to_test, params, n_runs=10)
                         except Exception as e:
                             print(f"Erro ao comparar algoritmos: {e}")
                     elif start_button.collidepoint(mouse_pos):

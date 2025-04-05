@@ -165,7 +165,7 @@ def draw_parameter_selection(screen, font, params):
     start_x = (screen.get_width() - total_width) // 2
 
     colors = [(255, 59, 48)] + [(40, 167, 69)] * 3  
-    texts = ["Back", "Benchmark", "Compare", "Start"]
+    texts = ["Back", "Start", "Benchmark", "Compare"]
     buttons_rects = []
 
     for i in range(total_buttons):

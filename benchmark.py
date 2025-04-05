@@ -1,13 +1,16 @@
+
 import os
 import matplotlib.pyplot as plt
 from datetime import datetime
 import seater
 import file_handler
 
-def run_benchmark(guests, params, algorithm, n_runs=10):
-
+def run_benchmark(guests, params, algorithm, n_runs=10, benchmark_folder=None):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    benchmark_folder = os.path.join("benchmarks", f"benchmark_{timestamp}_{algorithm.replace(' ', '_').lower()}")
+    
+    if benchmark_folder is None:
+        benchmark_folder = os.path.join("benchmarks", f"benchmark_{timestamp}_{algorithm.replace(' ', '_').lower()}")
+    
     os.makedirs(benchmark_folder, exist_ok=True)
 
     best_costs = []
@@ -17,6 +20,9 @@ def run_benchmark(guests, params, algorithm, n_runs=10):
     for i in range(n_runs):
         print(f"[{algorithm}] Benchmark Run {i+1}/{n_runs}")
         
+        run_folder = os.path.join(benchmark_folder, f"run_{i+1}")
+        os.makedirs(run_folder, exist_ok=True)
+
         if algorithm == "Simulated Annealing":
             tables = seater.simulated_annealing(
                 guests=guests,
@@ -25,7 +31,8 @@ def run_benchmark(guests, params, algorithm, n_runs=10):
                 iterations=params["iterations"],
                 cooling_type=params["cooling_type"],
                 min_per_table=params["min_per_table"],
-                max_per_table=params["max_per_table"]
+                max_per_table=params["max_per_table"],
+                output_folder=run_folder
             )
         elif algorithm == "Genetic Algorithm":
             tables = seater.genetic_algorithm(
@@ -34,14 +41,16 @@ def run_benchmark(guests, params, algorithm, n_runs=10):
                 max_per_table=params["max_per_table"],
                 generations=params["iterations"],
                 mutation_rate=params["mutation_rate"],
-                population_size=params["population_size"]
+                population_size=params["population_size"],
+                output_folder=run_folder
             )
         elif algorithm == "Hill Climbing":
             tables = seater.hill_climbing(
                 guests=guests,
                 min_per_table=params["min_per_table"],
                 max_per_table=params["max_per_table"],
-                iterations=params["iterations"]
+                iterations=params["iterations"],
+                output_folder=run_folder
             )
         else:
             raise ValueError(f"Unsupported algorithm: {algorithm}")
@@ -51,9 +60,6 @@ def run_benchmark(guests, params, algorithm, n_runs=10):
         perfect_score = seater.calculate_theoretical_perfect_score(guests)
         optimality = (score / perfect_score) * 100 if perfect_score else 0
 
-        # Guardar resultados individuais
-        run_folder = os.path.join(benchmark_folder, f"run_{i+1}")
-        os.makedirs(run_folder, exist_ok=True)
         file_handler.write_seating_arrangement(
             tables,
             filename=os.path.join(run_folder, "seating.txt"),
@@ -99,10 +105,8 @@ def run_benchmark(guests, params, algorithm, n_runs=10):
 
 
 def compare_algorithms(guests, algorithms_to_test, params, n_runs=10):
-    
-    # Criar pasta base para comparação
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    comparison_folder = os.path.join("benchmarks", f"comparison_{timestamp}")
+    comparison_folder = os.path.join("comparisons", f"comparison_{timestamp}")
     os.makedirs(comparison_folder, exist_ok=True)
 
     all_costs = {}
@@ -110,19 +114,17 @@ def compare_algorithms(guests, algorithms_to_test, params, n_runs=10):
 
     for algo in algorithms_to_test:
         print(f"\n🔍 Benchmarking {algo}...")
+        algo_folder = os.path.join(comparison_folder, algo.replace(" ", "_").lower())
         benchmark_folder, costs, scores = run_benchmark(
             guests=guests,
             params=params,
             algorithm=algo,
-            n_runs=n_runs
+            n_runs=n_runs,
+            benchmark_folder=algo_folder
         )
 
         all_costs[algo] = costs
         all_scores[algo] = scores
-
-        # Mover resultados do benchmark individual para a pasta da comparação
-        algo_folder = os.path.join(comparison_folder, algo.replace(" ", "_").lower())
-        os.rename(benchmark_folder, algo_folder)
 
     # Criar gráfico comparativo
     plt.figure(figsize=(8, 6))
@@ -133,7 +135,6 @@ def compare_algorithms(guests, algorithms_to_test, params, n_runs=10):
     plt.savefig(os.path.join(comparison_folder, "comparison_boxplot.png"))
     plt.close()
 
-    # Criar resumo em txt
     with open(os.path.join(comparison_folder, "comparison_summary.txt"), "w") as f:
         f.write(f"Comparison Summary ({n_runs} runs)\n")
         f.write("=" * 50 + "\n\n")
@@ -148,5 +149,3 @@ def compare_algorithms(guests, algorithms_to_test, params, n_runs=10):
             f.write(f"  Worst Score: {worst}\n\n")
 
     print(f"\n✅ Comparação concluída em: {comparison_folder}")
-
-

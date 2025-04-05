@@ -3,7 +3,6 @@ import math
 import copy
 from datetime import datetime
 import plotting
-import file_handler
 
 # ============================================================================================================================================================
 # Função: calculate_cost
@@ -374,7 +373,7 @@ def simulated_annealing(guests, initial_temperature, cooling_rate, iterations, m
 # Requer tuning para resultados mais estáveis.
 # ========================================================================================================================================================
 
-def genetic_algorithm(guests, min_per_table, max_per_table, population_size=10, generations=1000, mutation_rate=0.01):
+def genetic_algorithm(guests, min_per_table, max_per_table, population_size=10, generations=1000, mutation_rate=0.01, output_folder=None):
     
     # -----------------------------------------------------
     # Criação da população inicial com disposições válidas
@@ -490,7 +489,7 @@ def genetic_algorithm(guests, min_per_table, max_per_table, population_size=10, 
     # -------------------------
     population = create_initial_population()
     validate_population(population, guests)
-
+    best_costs = []  # Guarda os melhores custos para plotar depois
     # -------------------------
     # Etapa 2: evolução
     # -------------------------
@@ -516,13 +515,16 @@ def genetic_algorithm(guests, min_per_table, max_per_table, population_size=10, 
 
         # Print debug ocasionalmente
         if generation % 100 == 0:
-            print(f"Geracão {generation}: Melhor custo = {calculate_cost(population[0], guests)}")
+            best_cost = calculate_cost(population[0], guests)
+            best_costs.append(calculate_cost(population[0], guests))
+            print(f"Geracão {generation}: Melhor custo = {best_cost}")
             print(f"Diversidade da Populacão: {len(set(tuple(tuple(table) for table in individual) for individual in population))} indivíduos únicos")
 
     # -------------------------
     # Etapa 3: resultado final
     # -------------------------
     best_tables = min(population, key=lambda x: calculate_cost(x, guests))
+    plotting.plot_genetic_progress(best_costs, save_dir=output_folder)
     print(f"Best tables found: Cost = {calculate_cost(best_tables, guests)}")
     return best_tables
 
@@ -531,23 +533,25 @@ def genetic_algorithm(guests, min_per_table, max_per_table, population_size=10, 
 # Descrição: Algoritmo ganancioso. Aceita apenas vizinhos que melhoram o custo.
 # Útil como baseline para comparação com heurísticas mais avançadas.
 # ========================================================================================================================================================
-def hill_climbing(guests, min_per_table, max_per_table, iterations=500):
+def hill_climbing(guests, min_per_table, max_per_table, iterations=500, output_folder=None):
     
     current = create_balanced_seating(guests, min_per_table, max_per_table)     # Cria uma disposição inicial
     current_cost = calculate_cost(current, guests)                              # Calcula o custo inicial   
     best = copy.deepcopy(current)                                               # Guarda a melhor disposição
     best_cost = current_cost                                                    # Guarda o melhor custo 
 
+    costs = []                                                                 # Guarda os custos para plotar depois
     for _ in range(iterations):
         neighbor = create_neighbor(current, min_per_table, max_per_table)       # Gera um vizinho
         neighbor_cost = calculate_cost(neighbor, guests)                        # Calcula o custo do vizinho
-
+        costs.append(neighbor_cost)                                             # Guarda o custo do vizinho
         if neighbor_cost < current_cost:                                        # Aceita o vizinho se o custo for melhor
             current = neighbor
             current_cost = neighbor_cost
 
             if neighbor_cost < best_cost:                                       # Atualiza a melhor disposição se o custo for melhor
                 best = copy.deepcopy(neighbor)                                  
-                best_cost = neighbor_cost                                       
+                best_cost = neighbor_cost 
 
-    return best                 
+    plotting.plot_hill_climbing_progress(costs, save_dir=output_folder)
+    return best              

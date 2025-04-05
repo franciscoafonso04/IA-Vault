@@ -1,4 +1,5 @@
 import pygame
+import seater
 
 # Add these global variables for scrolling
 SCROLL_SPEED = 15
@@ -44,7 +45,6 @@ def draw_parameters_menu(screen, font, selected_index):
     screen.blit(back_text, (50, y_offset + 40))
 
 
-import pygame
 
 # Add these global variables for scrolling
 SCROLL_SPEED = 15
@@ -441,5 +441,5 @@ def calculate_perfect_score(tables, guests=None):
         return total_guests * 3 * 10
     else:
         # Use the more accurate calculation from seater
-        from seater import calculate_theoretical_perfect_score
-        return calculate_theoretical_perfect_score(guests)
+        
+        return seater.calculate_theoretical_perfect_score(guests)

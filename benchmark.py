@@ -99,10 +99,7 @@ def run_benchmark(guests, params, algorithm, n_runs=10):
 
 
 def compare_algorithms(guests, algorithms_to_test, params, n_runs=10):
-    import os
-    from datetime import datetime
-    import matplotlib.pyplot as plt
-
+    
     # Criar pasta base para comparação
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     comparison_folder = os.path.join("benchmarks", f"comparison_{timestamp}")

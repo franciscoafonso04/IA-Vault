@@ -140,9 +140,9 @@ while running:
                         # Retry o algoritmo com os mesmos parâmetros
                         try:
                             seater.validate_parameters(params, len(guests))
+                            output_folder = file_handler.generate_output_folder()
                             print("Retrying with parameters:", params)
                             if params["algorithm"] == "Simulated Annealing":
-                                output_folder = file_handler.generate_output_folder()
                                 tables = seater.simulated_annealing(
                                     guests=guests,
                                     initial_temperature=params["initial_temperature"],
@@ -154,18 +154,21 @@ while running:
                                     output_folder=output_folder
                                 )
                             elif params["algorithm"] == "Genetic Algorithm":
+                                
                                 tables = seater.genetic_algorithm(
                                     guests=guests,
                                     min_per_table=params["min_per_table"],
                                     generations=params["iterations"],
-                                    max_per_table=params["max_per_table"]
+                                    max_per_table=params["max_per_table"],
+                                    output_folder=output_folder
                                 )
                             elif params["algorithm"] == "Hill Climbing":
                                 tables = seater.hill_climbing(
                                     guests=guests,
                                     min_per_table=params["min_per_table"],
                                     max_per_table=params["max_per_table"],
-                                    iterations=params["iterations"]
+                                    iterations=params["iterations"],
+                                    output_folder=output_folder
                                 )
 
                             current_score = -seater.calculate_cost(tables, guests)
@@ -189,8 +192,7 @@ while running:
                     elif benchmark_button.collidepoint(mouse_pos):
                         try:
                             seater.validate_parameters(params, len(guests))
-                            from benchmark import run_benchmark
-                            run_benchmark(guests, params, params["algorithm"], n_runs=10)
+                            benchmark.run_benchmark(guests, params, params["algorithm"], n_runs=10)
                         except Exception as e:
                             print(f"Benchmark error: {e}")
                     elif compare_button.collidepoint(mouse_pos):
@@ -222,14 +224,16 @@ while running:
                                     guests=guests,
                                     min_per_table=params["min_per_table"],
                                     generations=params["iterations"],
-                                    max_per_table=params["max_per_table"]
+                                    max_per_table=params["max_per_table"],
+                                    output_folder=output_folder
                                 )
                             elif params["algorithm"] == "Hill Climbing":
                                 tables = seater.hill_climbing(
                                     guests=guests,
                                     min_per_table=params["min_per_table"],
                                     max_per_table=params["max_per_table"],
-                                    iterations=params["iterations"]
+                                    iterations=params["iterations"],
+                                    output_folder=output_folder
                                 )
 
                             current_score = -seater.calculate_cost(tables, guests)

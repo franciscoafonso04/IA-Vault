@@ -83,16 +83,25 @@ def plot_hill_climbing_progress(costs, save_dir="results"):
 # Descrição: Mostra a evolução do melhor score por geração no Genetic Algorithm.
 # ============================================================================================================================================================
 
-def plot_genetic_progress(best_scores, save_dir="results"):
-    
+def plot_genetic_progress(best_scores, best_costs=None, save_dir="results"):
+
     os.makedirs(save_dir, exist_ok=True)
-    plt.figure(figsize=(6, 4))
-    plt.plot(best_scores, marker='o', linestyle='-', label='Best score per generation')
-    plt.title("Genetic Algorithm Evolution")
+    plt.figure(figsize=(8, 5))
+
+    generations = list(range(len(best_scores)))
+
+    plt.plot(generations, best_scores, marker='o', linestyle='-', label='Best Score per Generation', color='green')
+
+    if best_costs:
+        plt.plot(generations, best_costs, marker='x', linestyle='--', label='Best Cost per Generation', color='red')
+
+    plt.title("Genetic Algorithm Progress")
     plt.xlabel("Generation")
-    plt.ylabel("Best Score")
+    plt.ylabel("Score / Cost")
+    plt.legend()
     plt.grid(True)
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, "genetic_progress.png"))
     plt.close()
+
 

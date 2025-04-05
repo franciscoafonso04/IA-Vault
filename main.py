@@ -48,7 +48,7 @@ while running:
         back_button, retry_button = ui.draw_seating_arrangement(screen, tables, font, score=current_score, guests=guests)
     elif state == PARAMETER_SELECTION:
         selected_index = 0
-        param_buttons, back_button, start_button, benchmark_button = ui.draw_parameter_selection(screen, font, params, selected_index)
+        param_buttons, back_button, start_button, benchmark_button, compare_button = ui.draw_parameter_selection(screen, font, params, selected_index)
 
     # Process events
     for event in pygame.event.get():
@@ -137,9 +137,17 @@ while running:
                         try:
                             seater.validate_parameters(params, len(guests))
                             from benchmark import run_benchmark  # se colocares isto num ficheiro benchmark.py
-                            run_benchmark(guests, params, n_runs=10)
+                            run_benchmark(guests, params, params["algorithm"], n_runs=10)
                         except Exception as e:
                             print(f"Benchmark error: {e}")
+                    elif compare_button.collidepoint(mouse_pos):
+                        try:
+                            from benchmark import compare_algorithms
+                            seater.validate_parameters(params, len(guests))
+                            algorithms_to_test = ["Simulated Annealing", "Genetic Algorithm"]
+                            compare_algorithms(guests, algorithms_to_test, params, n_runs=10)
+                        except Exception as e:
+                            print(f"Erro ao comparar algoritmos: {e}")
                     elif start_button.collidepoint(mouse_pos):
                         try:
                             seater.validate_parameters(params, len(guests))

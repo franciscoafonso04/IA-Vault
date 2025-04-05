@@ -134,7 +134,11 @@ def draw_parameter_selection(screen, font, params, selected_index):
     benchmark_text = font.render("Benchmark", True, (0, 0, 0))
     screen.blit(benchmark_text, benchmark_text.get_rect(center=benchmark_button.center))
 
-    
+    # Compare
+    compare_button = pygame.Rect(screen_center + button_width + spacing*2 + button_width, y_button, button_width, button_height)
+    pygame.draw.rect(screen, (135, 206, 250), compare_button, border_radius=10)
+    compare_text = font.render("Compare", True, (0, 0, 0))
+    screen.blit(compare_text, compare_text.get_rect(center=compare_button.center))
 
     # Start
     start_button = pygame.Rect(screen_center + button_width + spacing, y_button, button_width, button_height)
@@ -142,7 +146,7 @@ def draw_parameter_selection(screen, font, params, selected_index):
     start_text = font.render("Start", True, (255, 255, 255))
     screen.blit(start_text, start_text.get_rect(center=start_button.center))
 
-    return buttons, back_button, start_button, benchmark_button
+    return buttons, back_button, start_button, benchmark_button, compare_button 
 
 
 

@@ -4,6 +4,7 @@ import seater
 import ui
 import os
 import benchmark
+
 pygame.init()
 
 # Tamanho da janela
@@ -30,11 +31,11 @@ params = {
     "min_per_table": 2,
     "max_per_table": 8,
     "initial_temperature": 100,
-    "cooling_rate": 0.95,
+    "cooling_rate": 0.98,
     "iterations": 1000,
     "mutation_rate": 0.01,
     "population_size": 50,
-    "cooling_type": "exponential",
+    "cooling_type": "logarithmic",  # Tipo de arrefecimento por default
     "algorithm": "Simulated Annealing"  # Algoritmo selecionado por default
 }
 

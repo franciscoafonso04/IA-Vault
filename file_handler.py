@@ -44,7 +44,7 @@ def write_seating_arrangement(tables, filename=None, current_score=None, perfect
             txtfile.write("-------------------- Metrics --------------------\n")
             if algorithm is not None:
                 txtfile.write(f"Algorithm: {algorithm}\n")
-            txtfile.write(f"Current Score: {round(current_score,2)}\n")
+            txtfile.write(f"Score: {round(current_score,2)}\n")
             if perfect_score is not None:
                 txtfile.write(f"Perfect Score: {round(perfect_score,2)}\n")
             if optimality is not None:

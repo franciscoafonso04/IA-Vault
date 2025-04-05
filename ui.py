@@ -45,17 +45,18 @@ def draw_parameters_menu(screen, font, selected_index):
 
 
 def draw_parameter_selection(screen, font, params, selected_index):
-    """
-    Draws the parameter selection screen, with the algorithm as the top-most option.
-    Dynamically updates the remaining options based on the selected algorithm.
-    """
     screen.fill((240, 248, 255))
     title = font.render("Adjust Seating Parameters", True, (0, 0, 0))
     screen.blit(title, (20, 20))
     y = 80
     buttons = []
 
-    # Define the parameters for each algorithm
+    # Define botão padrão
+    button_width = 120
+    button_height = 40
+    spacing = 10
+
+    # Define os parâmetros por algoritmo
     algorithm_parameters = {
         "Simulated Annealing": [
             ("Initial Temperature", "initial_temperature", 1, 1000),
@@ -77,7 +78,7 @@ def draw_parameter_selection(screen, font, params, selected_index):
         ],
     }
 
-    # Draw the algorithm selection first
+    # Algorithm selector
     algorithm_label = font.render("Algorithm:", True, (0, 0, 0))
     screen.blit(algorithm_label, (50, y))
     algorithm_rect = pygame.Rect(250, y, 200, 30)
@@ -88,52 +89,61 @@ def draw_parameter_selection(screen, font, params, selected_index):
     buttons.append((algorithm_rect, "algorithm", None))
     y += 50
 
-    # Get the parameters for the selected algorithm
+    # Parameters for selected algorithm
     selected_algorithm = params["algorithm"]
-    if selected_algorithm in algorithm_parameters:
-        parameters = algorithm_parameters[selected_algorithm]
-    else:
-        parameters = []
+    parameters = algorithm_parameters.get(selected_algorithm, [])
 
-    # Draw the parameters for the selected algorithm
     for label, key, min_val, max_val in parameters:
-        # Draw the label
-        text = font.render(f"{label}:", True, (0, 0, 0))
-        screen.blit(text, (50, y))
+        screen.blit(font.render(f"{label}:", True, (0, 0, 0)), (50, y))
 
-        # Draw the value box
+        # Value box
         value_rect = pygame.Rect(250, y, 150, 30)
         pygame.draw.rect(screen, (255, 255, 255), value_rect)
         pygame.draw.rect(screen, (0, 0, 0), value_rect, 2)
-
-        # Draw the value
         value_text = font.render(str(params.get(key, "")), True, (0, 0, 0))
         screen.blit(value_text, (260, y + 5))
 
-        # Add buttons for increment/decrement if applicable
         if min_val is not None and max_val is not None:
-            dec_button = pygame.draw.rect(screen, (200, 200, 200), (200, y, 40, 30))
-            dec_text = font.render("-", True, (0, 0, 0))
-            screen.blit(dec_text, (212, y))
-            inc_button = pygame.draw.rect(screen, (200, 200, 200), (410, y, 40, 30))
-            inc_text = font.render("+", True, (0, 0, 0))
-            screen.blit(inc_text, (422, y))
+            # - button
+            dec_button = pygame.Rect(200, y, 40, 30)
+            pygame.draw.rect(screen, (200, 200, 200), dec_button)
+            screen.blit(font.render("-", True, (0, 0, 0)), (212, y))
             buttons.append((dec_button, key, -1))
+
+            # + button
+            inc_button = pygame.Rect(410, y, 40, 30)
+            pygame.draw.rect(screen, (200, 200, 200), inc_button)
+            screen.blit(font.render("+", True, (0, 0, 0)), (422, y))
             buttons.append((inc_button, key, 1))
 
         y += 50
 
-    # Draw navigation buttons
-    back_button = pygame.draw.rect(screen, (255, 99, 71), (50, y + 20, 100, 40))
-    start_button = pygame.draw.rect(screen, (50, 205, 50), (screen.get_width() - 150, y + 20, 100, 40))
-    benchmark_button = pygame.draw.rect(screen, (255, 215, 0), (screen.get_width() // 2 - 50, y + 20, 120, 40))
+    # Botões de navegação
+    screen_center = screen.get_width() // 2
+    y_button = y + 30
 
-    screen.blit(font.render("Back", True, (255, 255, 255)), (70, y + 30))
-    screen.blit(font.render("Start", True, (255, 255, 255)), (screen.get_width() - 130, y + 30))
-    screen.blit(font.render("Benchmark", True, (0, 0, 0)), (screen.get_width() // 2 - 35, y + 30))
+    # Back
+    back_button = pygame.Rect(screen_center - button_width - spacing*2 - button_width, y_button, button_width, button_height)
+    pygame.draw.rect(screen, (255, 105, 97), back_button, border_radius=10)
+    back_text = font.render("Back", True, (255, 255, 255))
+    screen.blit(back_text, back_text.get_rect(center=back_button.center))
 
+    # Benchmark
+    benchmark_button = pygame.Rect(screen_center - button_width // 2, y_button, button_width, button_height)
+    pygame.draw.rect(screen, (255, 215, 0), benchmark_button, border_radius=10)
+    benchmark_text = font.render("Benchmark", True, (0, 0, 0))
+    screen.blit(benchmark_text, benchmark_text.get_rect(center=benchmark_button.center))
+
+    
+
+    # Start
+    start_button = pygame.Rect(screen_center + button_width + spacing, y_button, button_width, button_height)
+    pygame.draw.rect(screen, (76, 175, 80), start_button, border_radius=10)
+    start_text = font.render("Start", True, (255, 255, 255))
+    screen.blit(start_text, start_text.get_rect(center=start_button.center))
 
     return buttons, back_button, start_button, benchmark_button
+
 
 
 # Função para desenhar a tabela no Pygame
@@ -294,7 +304,7 @@ def draw_seating_arrangement(screen, tables, font, score=None, guests=None):
     # Display the score if available
     if score is not None:
         # Display current score
-        score_text = font.render(f'Current Score: {round(score,2)}', True, (0, 100, 0))
+        score_text = font.render(f'Score: {round(score,2)}', True, (0, 100, 0))
         screen.blit(score_text, (screen.get_width() - 300, 20))
         
         # Calculate and display theoretical perfect score

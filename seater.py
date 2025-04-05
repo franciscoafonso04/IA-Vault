@@ -475,54 +475,97 @@ def genetic_algorithm(guests, min_per_table, max_per_table, population_size=10, 
 
     
     def crossover(parent1, parent2):
-        """Creates a child by inheriting tables from both parents while ensuring uniqueness."""
+        """Performs crossover between two parents to generate a child."""
         child = []
-        assigned_guests = set()
-        
+        used_guests = set()
+
+        # Combine tables from both parents while avoiding duplicates
         for table1, table2 in zip(parent1, parent2):
-            # Randomly pick a table from either parent
-            table = random.choice([table1, table2])
+            combined_table = []
+            for guest in table1 + table2:
+                if guest not in used_guests:
+                    combined_table.append(guest)
+                    used_guests.add(guest)
+            child.append(combined_table)
+
+        # Redistribute guests to balance tables
+        all_guests = set(guest for table in parent1 + parent2 for guest in table)
+        missing_guests = all_guests - used_guests
+
+        # Flatten child tables and redistribute guests
+        flattened_child = [guest for table in child for guest in table]
+        flattened_child.extend(missing_guests)
+
+        # Calculate the number of tables needed
+        num_tables = len(parent1)  # Assume the number of tables is the same as the parents
+        avg_table_size = len(flattened_child) // num_tables
+        extra_guests = len(flattened_child) % num_tables
+
+        # Create balanced tables
+        child = []
+        start_idx = 0
+        for i in range(num_tables):
+            table_size = avg_table_size + (1 if i < extra_guests else 0)
+            table = flattened_child[start_idx:start_idx + table_size]
             child.append(table)
-            assigned_guests.update(table)
-        
-        # Find missing guests
-        missing_guests = set(guests) - assigned_guests
-        
-        # Distribute missing guests into tables while keeping limits
-        for guest in missing_guests:
-            eligible_tables = [t for t in child if len(t) < max_per_table]
-            if eligible_tables:
-                random.choice(eligible_tables).append(guest)
-            else:
-                child.append([guest])  # Create a new table if needed
-        
+            start_idx += table_size
+
+        # Validate the child
+        all_guests_in_child = [guest for table in child for guest in table]
+        if len(all_guests_in_child) != len(all_guests) or len(all_guests_in_child) != len(set(all_guests_in_child)):
+            print("Debug: Parent 1:", parent1)
+            print("Debug: Parent 2:", parent2)
+            print("Debug: Child:", child)
+            print("Debug: Missing Guests:", missing_guests)
+            raise ValueError("Crossover produced an invalid child: Missing or duplicate guests!")
+
         return child
 
     
     def mutate(individual):
-        """Randomly swaps guests between tables to introduce diversity."""
-        if random.random() > mutation_rate:
-            return individual  # No mutation
-        
-        table1, table2 = random.sample(individual, 2)
-        
-        if table1 and table2:
-            guest1, guest2 = random.choice(table1), random.choice(table2)
-            table1[table1.index(guest1)], table2[table2.index(guest2)] = guest2, guest1
-        
+        """Applies mutation to an individual to introduce diversity."""
+        max_retries = 10  # Limit the number of retries to avoid infinite loops
+        for _ in range(max_retries):
+            # Select two random tables
+            table1, table2 = random.sample(individual, 2)
+
+            # Swap two random guests between the tables
+            if table1 and table2:
+                guest1 = random.choice(table1)
+                guest2 = random.choice(table2)
+                table1[table1.index(guest1)], table2[table2.index(guest2)] = guest2, guest1
+
+            # Ensure no duplicates across all tables
+            all_guests = [guest for table in individual for guest in table]
+            if len(all_guests) == len(set(all_guests)):
+                return individual  # Return the valid individual if no duplicates are found
+
+        # If retries are exhausted, return the original individual without mutation
+        print("Warning: Mutation failed to produce a valid individual after retries.")
         return individual
+    
+    def validate_population(population, guests):
+        """Ensures that all individuals in the population are valid."""
+        for individual in population:
+            all_guests = [guest for table in individual for guest in table]
+            if len(all_guests) != len(guests):
+                raise ValueError("Population contains an invalid individual: Missing guests!")
+            if len(all_guests) != len(set(all_guests)):
+                raise ValueError("Population contains an invalid individual: Duplicate guests!")
 
  
     population = create_initial_population()
-    
+    validate_population(population, guests)
+
     for generation in range(generations):
         new_population = []
         for _ in range(population_size // 2):
             parent1, parent2 = select_parents(population)
             child1, child2 = crossover(parent1, parent2), crossover(parent2, parent1)
             new_population.extend([mutate(child1), mutate(child2)])
-        
+
         population = sorted(new_population, key=lambda x: calculate_cost(x, guests))[:population_size]
+        validate_population(population, guests)  # Validate the population
         
         if generation % 100 == 0:
             print(f"Generation {generation}: Best cost = {calculate_cost(population[0], guests)}")

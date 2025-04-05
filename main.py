@@ -28,34 +28,13 @@ params = {
     "algorithm": "Simulated Annealing"
 }
 
-guests = file_handler.read_guest_preferences("test.csv")
+guests = file_handler.read_guest_preferences("guest_list.csv")
 tables = seater.create_balanced_seating(guests, params["min_per_table"], params["max_per_table"])  
 current_score = None
 
 running = True
 
-def crossover(parent1, parent2):
-    """Performs crossover between two parents to generate a child."""
-    child = []
-    used_guests = set()
 
-    for table1, table2 in zip(parent1, parent2):
-        # Combine guests from both parents while avoiding duplicates
-        combined_table = [guest for guest in table1 if guest not in used_guests] + \
-                         [guest for guest in table2 if guest not in used_guests]
-        used_guests.update(combined_table)
-        child.append(combined_table[:params["max_per_table"]])  # Ensure table size constraints
-
-    # Distribute remaining guests to ensure all guests are included
-    remaining_guests = set(guest for table in parent1 + parent2 for guest in table) - used_guests
-    for guest in remaining_guests:
-        for table in child:
-            if len(table) < params["max_per_table"]:
-                table.append(guest)
-                used_guests.add(guest)
-                break
-
-    return child
 
 while running:
     screen.fill((255, 255, 255))
@@ -220,10 +199,10 @@ while running:
                                         "initial_temperature": (10, 10, 1000),
                                         "cooling_rate": (0.005, 0.01, 1.0),
                                         "iterations": (100, 100, 10000),
-                                        "mutation_rate": (0.01, 0.01, 1.0),  # Add mutation_rate with appropriate step, min, and max
-                                        "population_size": (10, 10, 500),    # Add population_size if needed
-                                        "tabu_size": (1, 1, 50),             # Add tabu_size if needed
-                                        "max_flips": (100, 100, 10000),      # Add max_flips if needed
+                                        "mutation_rate": (0.01, 0.01, 1.0), 
+                                        "population_size": (10, 10, 500),  
+                                        "tabu_size": (1, 1, 50),        
+                                        "max_flips": (100, 100, 10000),   
                                     }
                                     step, min_val, max_val = steps[key]
                                     new_value = round(params[key] + (operation * step), 3)

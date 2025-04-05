@@ -14,7 +14,7 @@ import file_handler
 
 def calculate_cost(tables, guests):
     
-    # Check each table
+    cost = 0
     # Itera sobre cada mesa
     for table in tables:
         for guest in table:

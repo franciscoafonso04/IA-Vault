@@ -471,8 +471,9 @@ def genetic_algorithm(guests, min_per_table, max_per_table, population_size=10, 
         return population
     
     def select_parents(population):
-        """Selects two parents using tournament selection (lower cost = better)."""
-        tournament = random.sample(population, 5)  # Pick 5 random candidates
+        """Selects two parents using tournament selection."""
+        tournament_size = min(10, len(population))  # Ensure tournament size is not larger than the population
+        tournament = random.sample(population, tournament_size)
         tournament.sort(key=lambda x: calculate_cost(x, guests))  # Sort by cost
         return tournament[0], tournament[1]  # Pick best two
 
@@ -562,17 +563,32 @@ def genetic_algorithm(guests, min_per_table, max_per_table, population_size=10, 
 
     for generation in range(generations):
         new_population = []
+
+        # Generate children through crossover and mutation
         for _ in range(population_size // 2):
             parent1, parent2 = select_parents(population)
             child1, child2 = crossover(parent1, parent2), crossover(parent2, parent1)
             new_population.extend([mutate(child1), mutate(child2)])
 
-        population = sorted(new_population, key=lambda x: calculate_cost(x, guests))[:population_size]
-        validate_population(population, guests)  # Validate the population
-        
+        # Keep the best individuals (elitism)
+        elite_size = 5  # Number of best individuals to carry over
+        elites = sorted(population, key=lambda x: calculate_cost(x, guests))[:elite_size]
+
+        # Combine elites with the new population
+        combined_population = elites + new_population
+
+        # Select the top individuals to form the next generation
+        population = sorted(combined_population, key=lambda x: calculate_cost(x, guests))[:population_size]
+
+        # Validate the population
+        validate_population(population, guests)
+
+        # Debugging information
         if generation % 100 == 0:
             print(f"Generation {generation}: Best cost = {calculate_cost(population[0], guests)}")
-    
+            print(f"Population diversity: {len(set(tuple(tuple(table) for table in individual) for individual in population))} unique individuals")
+
+    # Return the best solution
     best_tables = min(population, key=lambda x: calculate_cost(x, guests))
     print(f"Best tables found: Cost = {calculate_cost(best_tables, guests)}")
     return best_tables

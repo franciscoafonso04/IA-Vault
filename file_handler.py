@@ -21,7 +21,7 @@ def read_guest_preferences(filename):
 
 def generate_output_folder():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    folder = os.path.join("results", f"arrangement_{timestamp}")
+    folder = os.path.join("results", f"seating_{timestamp}")
     os.makedirs(folder, exist_ok=True)
     return folder
 

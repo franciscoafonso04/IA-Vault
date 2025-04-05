@@ -30,6 +30,7 @@ params = {
 }
 
 guests = file_handler.read_guest_preferences("guest_list.csv")
+
 tables = seater.create_balanced_seating(guests, params["min_per_table"], params["max_per_table"])  
 current_score = None
 

@@ -124,7 +124,7 @@ while running:
                             # Save the seating arrangement with metrics
                             file_handler.write_seating_arrangement(
                                 tables,
-                                filename= os.path.join(output_folder, "seating.csv"),
+                                filename= os.path.join(output_folder, "seating.txt"),
                                 current_score=current_score,
                                 perfect_score=perfect_score,
                                 optimality=optimality,
@@ -140,6 +140,7 @@ while running:
                         try:
                             seater.validate_parameters(params, len(guests))
                             print("Starting with parameters:", params)
+                            output_folder = file_handler.generate_output_folder()
                             if params["algorithm"] == "Simulated Annealing":
                                 tables = seater.simulated_annealing(
                                     guests=guests, 
@@ -148,7 +149,8 @@ while running:
                                     iterations=params["iterations"],
                                     cooling_type=params["cooling_type"],
                                     min_per_table=params["min_per_table"],
-                                    max_per_table=params["max_per_table"]
+                                    max_per_table=params["max_per_table"],
+                                    output_folder= output_folder
                                 )
                             elif params["algorithm"] == "CNF + WalkSAT":
                                 tables = seater.cnf_walksat(
@@ -176,10 +178,11 @@ while running:
                             # Save the seating arrangement with metrics
                             file_handler.write_seating_arrangement(
                                 tables, 
+                                filename=os.path.join(output_folder, "seating.txt"),
                                 current_score=current_score,
                                 perfect_score=perfect_score,
                                 optimality=optimality,
-                                algorithm=params["algorithm"]  # Add this line
+                                algorithm=params["algorithm"]
                             )
                             state = VIEW_SEATING
                         except Exception as e:

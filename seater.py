@@ -372,87 +372,6 @@ def calculate_theoretical_perfect_score(guests):
     
     return perfect_score
 
-def cnf_walksat(guests, min_per_table, max_per_table, max_flips=10000):
-    """
-    Implements the CNF + WalkSAT algorithm to find an optimal seating arrangement.
-    """
-    import random
-    
-    def generate_cnf_formula(guests, min_per_table, max_per_table):
-        """Generates a CNF formula representing the seating constraints."""
-        cnf = []
-        guest_list = list(guests.keys())
-        num_guests = len(guest_list)
-        num_tables = (num_guests + min_per_table - 1) // min_per_table
-        
-        guest_table_vars = {guest: [f"{guest}_T{i}" for i in range(num_tables)] for guest in guest_list}
-        
-        
-        for guest, tables in guest_table_vars.items():
-            cnf.append(tables)  
-            for i in range(len(tables)):
-                for j in range(i + 1, len(tables)):
-                    cnf.append([f"-{tables[i]}", f"-{tables[j]}"])  # At most one table
-        
-      
-        for guest, preferences in guests.items():
-            for preferred in preferences['prefers']:
-                if preferred in guest_table_vars:
-                    for i in range(num_tables):
-                        cnf.append([f"-{guest_table_vars[guest][i]}", guest_table_vars[preferred][i]])
-                        cnf.append([guest_table_vars[guest][i], f"-{guest_table_vars[preferred][i]}"])
-        
-        for guest, preferences in guests.items():
-            for avoided in preferences['avoids']:
-                if avoided in guest_table_vars:
-                    for i in range(num_tables):
-                        cnf.append([f"-{guest_table_vars[guest][i]}", f"-{guest_table_vars[avoided][i]}"])
-        
-        return cnf, guest_table_vars
-    
-    def evaluate_solution(solution, cnf):
-        """Evaluates the number of satisfied clauses in the CNF formula."""
-        return sum(1 for clause in cnf if any(literal in solution for literal in clause))
-    
-    def flip_variable(solution, cnf, guest_table_vars):
-        """Randomly flips a variable to potentially satisfy more clauses."""
-        unsatisfied_clauses = [clause for clause in cnf if not any(literal in solution for literal in clause)]
-        if not unsatisfied_clauses:
-            return solution
-        clause = random.choice(unsatisfied_clauses)
-        literal = random.choice(clause)
-        
-        
-        guest = literal.split("_")[0]
-        for var in guest_table_vars[guest]:
-            if var in solution:
-                solution.remove(var)
-        solution.add(literal)
-        
-        return solution
-    
-
-    cnf, guest_table_vars = generate_cnf_formula(guests, min_per_table, max_per_table)
-    
-
-    current_solution = set()
-    for guest, tables in guest_table_vars.items():
-        current_solution.add(random.choice(tables))
-    
-    for flip in range(max_flips):
-        if evaluate_solution(current_solution, cnf) == len(cnf):
-            print(f"Solution found in {flip} flips")
-            return current_solution
-        current_solution = flip_variable(current_solution, cnf, guest_table_vars)
-    
-    print("No solution found within max flips")
-    return None
-
-
-def tabu_search(guests, min_per_table, max_per_table, tabu_size=10, iterations=1000):
-    # Implement the Tabu Search algorithm here
-    pass
-
 def genetic_algorithm(guests, min_per_table, max_per_table, population_size=10, generations=1000, mutation_rate=0.01):
     """
     Implements a Genetic Algorithm to optimize guest seating arrangements.
@@ -592,3 +511,28 @@ def genetic_algorithm(guests, min_per_table, max_per_table, population_size=10, 
     best_tables = min(population, key=lambda x: calculate_cost(x, guests))
     print(f"Best tables found: Cost = {calculate_cost(best_tables, guests)}")
     return best_tables
+
+def hill_climbing(guests, min_per_table, max_per_table, iterations=500):
+    """
+    Algoritmo ganancioso (greedy): aceita apenas vizinhos com melhor custo.
+    Útil como baseline simples para comparação com metaheurísticas.
+    """
+
+    current = create_balanced_seating(guests, min_per_table, max_per_table)
+    current_cost = calculate_cost(current, guests)
+    best = copy.deepcopy(current)
+    best_cost = current_cost
+
+    for _ in range(iterations):
+        neighbor = create_neighbor(current, min_per_table, max_per_table)
+        neighbor_cost = calculate_cost(neighbor, guests)
+
+        if neighbor_cost < current_cost:
+            current = neighbor
+            current_cost = neighbor_cost
+
+            if neighbor_cost < best_cost:
+                best = copy.deepcopy(neighbor)
+                best_cost = neighbor_cost
+
+    return best

@@ -64,18 +64,14 @@ def draw_parameter_selection(screen, font, params, selected_index):
             ("Iterations", "iterations", 100, 10000),
             ("Cooling Type", "cooling_type", None, None),
         ],
-        "CNF + WalkSAT": [
-            ("Max Flips", "max_flips", 100, 10000),
-        ],
-        "Tabu Search": [
-            ("Tabu Size", "tabu_size", 1, 50),
-            ("Max Iterations", "iterations", 100, 10000),
-        ],
         "Genetic Algorithm": [
             ("Population Size", "population_size", 10, 500),
             ("Generations", "iterations", 100, 10000),
             ("Mutation Rate", "mutation_rate", 0.01, 1.0),
         ],
+        "Hill Climbing": [
+        ("Iterations", "iterations", 100, 10000)
+        ]
     }
 
     # Algorithm selector

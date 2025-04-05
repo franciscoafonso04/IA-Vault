@@ -41,6 +41,13 @@ def run_benchmark(guests, params, algorithm, n_runs=10):
                 mutation_rate=params["mutation_rate"],
                 population_size=params["population_size"]
             )
+        elif algorithm == "Hill Climbing":
+            tables = seater.hill_climbing(
+                guests=guests,
+                min_per_table=params["min_per_table"],
+                max_per_table=params["max_per_table"],
+                iterations=params["iterations"]
+            )
         else:
             raise ValueError(f"Unsupported algorithm: {algorithm}")
 

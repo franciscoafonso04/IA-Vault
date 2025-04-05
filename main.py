@@ -2,7 +2,7 @@ import pygame
 import file_handler
 import seater
 import ui
-
+import os
 pygame.init()
 
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
@@ -83,6 +83,7 @@ while running:
                             seater.validate_parameters(params, len(guests))
                             print("Retrying with parameters:", params)
                             if params["algorithm"] == "Simulated Annealing":
+                                output_folder = file_handler.generate_output_folder()
                                 tables = seater.simulated_annealing(
                                     guests=guests, 
                                     initial_temperature=params["initial_temperature"],
@@ -90,22 +91,8 @@ while running:
                                     iterations=params["iterations"],
                                     cooling_type=params["cooling_type"],
                                     min_per_table=params["min_per_table"],
-                                    max_per_table=params["max_per_table"]
-                                )
-                            elif params["algorithm"] == "CNF + WalkSAT":
-                                tables = seater.cnf_walksat(
-                                    guests=guests, 
-                                    min_per_table=params["min_per_table"],
                                     max_per_table=params["max_per_table"],
-                                    max_flips=params["max_flips"]
-                                )
-                            elif params["algorithm"] == "Tabu Search":
-                                tables = seater.tabu_search(
-                                    guests=guests, 
-                                    min_per_table=params["min_per_table"],
-                                    max_per_table=params["max_per_table"],
-                                    tabu_size=params["tabu_size"],
-                                    iterations=params["iterations"],
+                                    output_folder=output_folder
                                 )
                             elif params["algorithm"] == "Genetic Algorithm":
                                 tables = seater.genetic_algorithm(
@@ -114,6 +101,13 @@ while running:
                                     generations=params["iterations"],
                                     max_per_table=params["max_per_table"]
                                 )
+                            elif params["algorithm"] == "Hill Climbing":
+                                tables = seater.hill_climbing(
+                                    guests=guests,
+                                    min_per_table=params["min_per_table"],
+                                    max_per_table=params["max_per_table"],
+                                    iterations=params["iterations"]
+                                )
                             current_score = -seater.calculate_cost(tables, guests)
                             perfect_score = seater.calculate_theoretical_perfect_score(guests)
                             optimality = (current_score / perfect_score * 100) if perfect_score > 0 else 0
@@ -121,6 +115,7 @@ while running:
                             # Save the seating arrangement with metrics
                             file_handler.write_seating_arrangement(
                                 tables, 
+                                filename=os.path.join(output_folder, "seating.txt"),
                                 current_score=current_score,
                                 perfect_score=perfect_score,
                                 optimality=optimality,
@@ -144,7 +139,7 @@ while running:
                         try:
                             from benchmark import compare_algorithms
                             seater.validate_parameters(params, len(guests))
-                            algorithms_to_test = ["Simulated Annealing", "Genetic Algorithm"]
+                            algorithms_to_test = ["Simulated Annealing", "Genetic Algorithm", "Hill Climbing"]
                             compare_algorithms(guests, algorithms_to_test, params, n_runs=10)
                         except Exception as e:
                             print(f"Erro ao comparar algoritmos: {e}")
@@ -152,6 +147,8 @@ while running:
                         try:
                             seater.validate_parameters(params, len(guests))
                             print("Starting with parameters:", params)
+                            output_folder = file_handler.generate_output_folder()
+
                             if params["algorithm"] == "Simulated Annealing":
                                 tables = seater.simulated_annealing(
                                     guests=guests, 
@@ -160,19 +157,8 @@ while running:
                                     iterations=params["iterations"],
                                     cooling_type=params["cooling_type"],
                                     min_per_table=params["min_per_table"],
-                                    max_per_table=params["max_per_table"]
-                                )
-                            elif params["algorithm"] == "CNF + WalkSAT":
-                                tables = seater.cnf_walksat(
-                                    guests=guests, 
-                                    min_per_table=params["min_per_table"],
-                                    max_per_table=params["max_per_table"]
-                                )
-                            elif params["algorithm"] == "Tabu Search":
-                                tables = seater.tabu_search(
-                                    guests=guests, 
-                                    min_per_table=params["min_per_table"],
-                                    max_per_table=params["max_per_table"]
+                                    max_per_table=params["max_per_table"],
+                                    output_folder=output_folder
                                 )
                             elif params["algorithm"] == "Genetic Algorithm":
                                 tables = seater.genetic_algorithm(
@@ -181,6 +167,13 @@ while running:
                                     generations=params["iterations"],
                                     max_per_table=params["max_per_table"]
                                 )
+                            elif params["algorithm"] == "Hill Climbing":
+                                tables = seater.hill_climbing(
+                                    guests=guests,
+                                    min_per_table=params["min_per_table"],
+                                    max_per_table=params["max_per_table"],
+                                    iterations=params["iterations"]
+                                )
                             current_score = -seater.calculate_cost(tables, guests)
                             perfect_score = seater.calculate_theoretical_perfect_score(guests)
                             optimality = (current_score / perfect_score * 100) if perfect_score > 0 else 0
@@ -188,6 +181,7 @@ while running:
                             # Save the seating arrangement with metrics
                             file_handler.write_seating_arrangement(
                                 tables, 
+                                filename= os.path.join(output_folder, "seating.txt"),
                                 current_score=current_score,
                                 perfect_score=perfect_score,
                                 optimality=optimality,
@@ -205,7 +199,7 @@ while running:
                                     current_idx = types.index(params[key])
                                     params[key] = types[(current_idx + 1) % len(types)]
                                 elif key == "algorithm":
-                                    algorithms = ["Simulated Annealing", "CNF + WalkSAT", "Tabu Search", "Genetic Algorithm"]
+                                    algorithms = ["Simulated Annealing", "Genetic Algorithm", "Hill Climbing"]
                                     current_idx = algorithms.index(params[key])
                                     params[key] = algorithms[(current_idx + 1) % len(algorithms)]
                                 else:
@@ -217,8 +211,6 @@ while running:
                                         "iterations": (100, 100, 10000),
                                         "mutation_rate": (0.01, 0.01, 1.0), 
                                         "population_size": (10, 10, 500),  
-                                        "tabu_size": (1, 1, 50),        
-                                        "max_flips": (100, 100, 10000),   
                                     }
                                     step, min_val, max_val = steps[key]
                                     new_value = round(params[key] + (operation * step), 3)

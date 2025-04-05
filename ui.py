@@ -70,7 +70,7 @@ parameters = {
 }
 
 
-def draw_parameter_selection(screen, font, params, selected_index):
+def draw_parameter_selection(screen, font, params):
     screen.fill((240, 248, 255))
     title = font.render("Adjust Seating Parameters", True, (0, 0, 0))
     screen.blit(title, (20, 20))
@@ -183,46 +183,78 @@ def draw_parameter_selection(screen, font, params, selected_index):
 
 
 
-# Função para desenhar a tabela no Pygame
 def draw_table(screen, data, font, row_height, col_widths):
-    # Título das colunas
+    global scroll_offset
     headers = ['Guest', 'Prefers', 'Avoids']
     for col, header in enumerate(headers):
-        pygame.draw.rect(screen, (100, 149, 237), (col * col_widths[col], 20, col_widths[col], row_height))  # Azul suave
+        pygame.draw.rect(screen, (100, 149, 237), (col * col_widths[col], 20, col_widths[col], row_height))
         text = font.render(header, True, (255, 255, 255))
-        screen.blit(text, (col * col_widths[col] + 10, 20 + 10))  # Texto branco
-    
-    # Preencher com os dados
-    y_offset = 60 - scroll_offset['preferences'] # Começar um pouco abaixo do título
+        screen.blit(text, (col * col_widths[col] + 10, 30))
+
+    y_offset = 60 - scroll_offset['preferences']
     for guest, preferences in data.items():
-        # Desenhar o nome do convidado
         pygame.draw.rect(screen, (255, 255, 255), (0, y_offset, col_widths[0], row_height))
         text = font.render(guest, True, (0, 0, 0))
         screen.blit(text, (10, y_offset + 10))
-        
-        # Desenhar as preferências
+
         prefer_text = ', '.join(preferences['prefers']) if preferences['prefers'] else "None"
         pygame.draw.rect(screen, (255, 255, 255), (col_widths[0], y_offset, col_widths[1], row_height))
-        text = font.render(prefer_text, True, (0, 0, 0))
-        screen.blit(text, (col_widths[0] + 10, y_offset + 10))
-        
-        # Desenhar as evitações
+        screen.blit(font.render(prefer_text, True, (0, 0, 0)), (col_widths[0] + 10, y_offset + 10))
+
         avoid_text = ', '.join(preferences['avoids']) if preferences['avoids'] else "None"
         pygame.draw.rect(screen, (255, 255, 255), (col_widths[0] + col_widths[1], y_offset, col_widths[2], row_height))
-        text = font.render(avoid_text, True, (0, 0, 0))
-        screen.blit(text, (col_widths[0] + col_widths[1] + 10, y_offset + 10))
-        
+        screen.blit(font.render(avoid_text, True, (0, 0, 0)), (col_widths[0] + col_widths[1] + 10, y_offset + 10))
+
         y_offset += row_height
 
-    # Draw and return back button
-    back_button = pygame.draw.rect(screen, (255, 59, 48), 
-                                 (10, screen.get_height() - 60, 100, 40), 
-                                 border_radius=10)
-    text = font.render('Back', True, (255, 255, 255))
-    text_rect = text.get_rect(center=(10 + 100 // 2, screen.get_height() - 40))
-    screen.blit(text, text_rect)
-    
-    return back_button
+    # Botão "Back"
+    back_button = pygame.draw.rect(screen, (255, 59, 48), (10, screen.get_height() - 60, 100, 40), border_radius=10)
+    screen.blit(font.render('Back', True, (255, 255, 255)), back_button.move(25, 5))
+
+    # Botão "Add Guest"
+    add_button = pygame.draw.rect(screen, (76, 175, 80), (screen.get_width() - 110, screen.get_height() - 60, 100, 40), border_radius=10)
+    screen.blit(font.render('Add Guest', True, (255, 255, 255)), add_button.move(5, 5))
+
+    return back_button, add_button
+
+def draw_add_guest_menu(screen, font, new_name, selected_prefers, selected_avoids, guests, name_active):
+    width, height = screen.get_size()
+    screen.fill((255, 255, 255))
+    title = font.render("Add New Guest", True, (0, 0, 0))
+    screen.blit(title, (width // 2 - title.get_width() // 2, 20))
+
+    # Input box para o nome
+    input_box = pygame.Rect(100, 80, 600, 40)
+    pygame.draw.rect(screen, (0, 0, 0), input_box, 2)
+    name_color = (0, 0, 0) if name_active else (150, 150, 150)
+    screen.blit(font.render(new_name or "Enter guest name...", True, name_color), (input_box.x + 10, input_box.y + 10))
+
+    # Preferências e Evitações
+    instructions = font.render("Click to select 3 prefers (green) and 3 avoids (red)", True, (50, 50, 50))
+    screen.blit(instructions, (100, 140))
+
+    guest_buttons = []
+    y_offset = 180
+    for name in guests:
+        rect = pygame.Rect(100, y_offset, 600, 30)
+        color = (200, 200, 200)
+        if name in selected_prefers:
+            color = (76, 175, 80)  # verde
+        elif name in selected_avoids:
+            color = (244, 67, 54)  # vermelho
+        pygame.draw.rect(screen, color, rect)
+        screen.blit(font.render(name, True, (0, 0, 0)), (rect.x + 10, rect.y + 5))
+        guest_buttons.append((rect, name))
+        y_offset += 40
+
+    # Botões
+    save_button = pygame.draw.rect(screen, (33, 150, 243), (100, height - 60, 120, 40), border_radius=10)
+    screen.blit(font.render("Save", True, (255, 255, 255)), save_button.move(30, 5))
+
+    cancel_button = pygame.draw.rect(screen, (200, 0, 0), (width - 220, height - 60, 120, 40), border_radius=10)
+    screen.blit(font.render("Cancel", True, (255, 255, 255)), cancel_button.move(20, 5))
+
+    return input_box, guest_buttons, save_button, cancel_button
 
 # Função para desenhar o menu principal
 def draw_main_menu(screen, font):

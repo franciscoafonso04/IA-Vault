@@ -9,13 +9,20 @@ pygame.init()
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
 
 # Estados possíveis da interface
-MENU, VIEW_PREFERENCES, VIEW_SEATING, PARAMETER_SELECTION = "menu", "preferences", "seating", "parameters"
+MENU, VIEW_PREFERENCES, VIEW_SEATING, PARAMETER_SELECTION, ADD_GUEST = "menu", "preferences", "seating", "parameters", "add_guest"
+
 state = MENU    # Estado inicial é o menu principal
 
 # Inicializar a janela
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Wedding Seater Planner")
 font = pygame.font.Font(None, 28)
+
+scroll_offset = {'preferences': 0, 'seating': 0}
+new_guest_name = ""
+selected_prefers = []
+selected_avoids = []
+input_active = False
 
 # Parâmetros iniciais (default) do algoritmo
 params = {
@@ -48,51 +55,90 @@ while running:
     if state == MENU:
         button1_rect, button2_rect = ui.draw_main_menu(screen, font)
     elif state == VIEW_PREFERENCES:
-        back_button = ui.draw_table(screen, guests, font, row_height=40, col_widths=[200, 200, 200])
+        back_button, add_button = ui.draw_table(screen, guests, font, row_height=40, col_widths=[200, 200, 200])
+    elif state == ADD_GUEST:
+        input_box, guest_buttons, save_button, cancel_button = ui.draw_add_guest_menu(
+            screen, font, new_guest_name, selected_prefers, selected_avoids, list(guests.keys()), input_active)
     elif state == VIEW_SEATING:
         back_button, retry_button = ui.draw_seating_arrangement(screen, tables, font, score=current_score, guests=guests)
     elif state == PARAMETER_SELECTION:
-        selected_index = 0
-        param_buttons, back_button, start_button, benchmark_button, compare_button = ui.draw_parameter_selection(screen, font, params, selected_index)
+        param_buttons, back_button, start_button, benchmark_button, compare_button = ui.draw_parameter_selection(screen, font, params)
 
     # Processa os eventos do utilizador
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False     # Fecha a aplicação
-            
+            running = False
+
+        elif event.type == pygame.KEYDOWN:
+            if state == ADD_GUEST and input_active:
+                if event.key == pygame.K_BACKSPACE:
+                    new_guest_name = new_guest_name[:-1]
+                elif event.key == pygame.K_RETURN:
+                    input_active = False
+                else:
+                    if len(new_guest_name) < 30:
+                        new_guest_name += event.unicode
+
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            # Scroll do rato para tabelas grandes
-            if event.button in (4, 5):  # Scroll wheel
-                if state == VIEW_PREFERENCES:
-                    ui.handle_scroll_event(event, 'preferences')
-                elif state == VIEW_SEATING:
-                    ui.handle_scroll_event(event, 'seating')
-                    
-            elif event.button == 1:  # Clique esquerdo
+            if event.button == 1:  # Clique esquerdo
                 mouse_pos = event.pos
-                
+
                 if state == MENU:
                     if button1_rect.collidepoint(mouse_pos):
                         state = PARAMETER_SELECTION
                     elif button2_rect.collidepoint(mouse_pos):
                         state = VIEW_PREFERENCES
-                        
+
                 elif state == VIEW_PREFERENCES:
                     if back_button.collidepoint(mouse_pos):
                         state = MENU
-                        
+                    elif add_button.collidepoint(mouse_pos):
+                        new_guest_name = ""
+                        selected_prefers = []
+                        selected_avoids = []
+                        input_active = True
+                        state = ADD_GUEST
+
+                elif state == ADD_GUEST:
+                    if input_box.collidepoint(mouse_pos):
+                        input_active = True
+                    else:
+                        input_active = False
+
+                    for rect, name in guest_buttons:
+                        if rect.collidepoint(mouse_pos):
+                            if name in selected_prefers:
+                                selected_prefers.remove(name)
+                            elif name in selected_avoids:
+                                selected_avoids.remove(name)
+                            elif len(selected_prefers) < 3:
+                                selected_prefers.append(name)
+                            elif len(selected_avoids) < 3:
+                                selected_avoids.append(name)
+
+                    if save_button.collidepoint(mouse_pos):
+                        if new_guest_name and new_guest_name not in guests and len(selected_prefers) <= 3 and len(selected_avoids) <= 3:
+                            guests[new_guest_name] = {
+                                "prefers": selected_prefers[:],
+                                "avoids": selected_avoids[:]
+                            }
+                            state = VIEW_PREFERENCES
+
+                    if cancel_button.collidepoint(mouse_pos):
+                        state = VIEW_PREFERENCES
+
                 elif state == VIEW_SEATING:
                     if back_button.collidepoint(mouse_pos):
                         state = MENU
                     elif retry_button.collidepoint(mouse_pos):
-                        # Repetir o algoritmo com os mesmos parâmetros
+                        # Retry o algoritmo com os mesmos parâmetros
                         try:
                             seater.validate_parameters(params, len(guests))
                             print("Retrying with parameters:", params)
                             if params["algorithm"] == "Simulated Annealing":
                                 output_folder = file_handler.generate_output_folder()
                                 tables = seater.simulated_annealing(
-                                    guests=guests, 
+                                    guests=guests,
                                     initial_temperature=params["initial_temperature"],
                                     cooling_rate=params["cooling_rate"],
                                     iterations=params["iterations"],
@@ -103,7 +149,7 @@ while running:
                                 )
                             elif params["algorithm"] == "Genetic Algorithm":
                                 tables = seater.genetic_algorithm(
-                                    guests=guests, 
+                                    guests=guests,
                                     min_per_table=params["min_per_table"],
                                     generations=params["iterations"],
                                     max_per_table=params["max_per_table"]
@@ -119,32 +165,29 @@ while running:
                             current_score = -seater.calculate_cost(tables, guests)
                             perfect_score = seater.calculate_theoretical_perfect_score(guests)
                             optimality = (current_score / perfect_score * 100) if perfect_score > 0 else 0
-                            
-                            # Guardar o resultado da disposição gerada
+
                             file_handler.write_seating_arrangement(
-                                tables, 
+                                tables,
                                 filename=os.path.join(output_folder, "seating.txt"),
                                 current_score=current_score,
                                 perfect_score=perfect_score,
                                 optimality=optimality,
-                                algorithm=params["algorithm"]  
+                                algorithm=params["algorithm"]
                             )
                         except Exception as e:
                             print(f"Error: {e}")
-                        
+
                 elif state == PARAMETER_SELECTION:
                     if back_button.collidepoint(mouse_pos):
                         state = MENU
                     elif benchmark_button.collidepoint(mouse_pos):
-                        # Benchmark do algoritmo selecionado
                         try:
                             seater.validate_parameters(params, len(guests))
-                            from benchmark import run_benchmark  
+                            from benchmark import run_benchmark
                             run_benchmark(guests, params, params["algorithm"], n_runs=10)
                         except Exception as e:
                             print(f"Benchmark error: {e}")
                     elif compare_button.collidepoint(mouse_pos):
-                        # Comparar algoritmos
                         try:
                             from benchmark import compare_algorithms
                             seater.validate_parameters(params, len(guests))
@@ -153,7 +196,6 @@ while running:
                         except Exception as e:
                             print(f"Erro ao comparar algoritmos: {e}")
                     elif start_button.collidepoint(mouse_pos):
-                        # Iniciar o algoritmo selecionado
                         try:
                             seater.validate_parameters(params, len(guests))
                             print("Starting with parameters:", params)
@@ -161,7 +203,7 @@ while running:
 
                             if params["algorithm"] == "Simulated Annealing":
                                 tables = seater.simulated_annealing(
-                                    guests=guests, 
+                                    guests=guests,
                                     initial_temperature=params["initial_temperature"],
                                     cooling_rate=params["cooling_rate"],
                                     iterations=params["iterations"],
@@ -172,7 +214,7 @@ while running:
                                 )
                             elif params["algorithm"] == "Genetic Algorithm":
                                 tables = seater.genetic_algorithm(
-                                    guests=guests, 
+                                    guests=guests,
                                     min_per_table=params["min_per_table"],
                                     generations=params["iterations"],
                                     max_per_table=params["max_per_table"]
@@ -184,49 +226,47 @@ while running:
                                     max_per_table=params["max_per_table"],
                                     iterations=params["iterations"]
                                 )
+
                             current_score = -seater.calculate_cost(tables, guests)
                             perfect_score = seater.calculate_theoretical_perfect_score(guests)
                             optimality = (current_score / perfect_score * 100) if perfect_score > 0 else 0
-                            
-                            # Guardar o resultado
+
                             file_handler.write_seating_arrangement(
-                                tables, 
-                                filename= os.path.join(output_folder, "seating.txt"),
+                                tables,
+                                filename=os.path.join(output_folder, "seating.txt"),
                                 current_score=current_score,
                                 perfect_score=perfect_score,
                                 optimality=optimality,
-                                algorithm=params["algorithm"] 
+                                algorithm=params["algorithm"]
                             )
                             state = VIEW_SEATING
                         except Exception as e:
                             print(f"Error: {e}")
                     else:
-                        # Detetar cliques nos botões dos parâmetros
-                        for btn in param_buttons:
-                            rect, key, operation = btn
+                        # Cliques nos botões dos parâmetros
+                        for rect, key, operation in param_buttons:
                             if rect.collidepoint(mouse_pos):
                                 if key == "cooling_type":
                                     types = ["exponential", "linear", "logarithmic"]
-                                    current_idx = types.index(params[key])
-                                    params[key] = types[(current_idx + 1) % len(types)]
+                                    idx = types.index(params[key])
+                                    params[key] = types[(idx + 1) % len(types)]
                                 elif key == "algorithm":
                                     algorithms = ["Simulated Annealing", "Genetic Algorithm", "Hill Climbing"]
-                                    current_idx = algorithms.index(params[key])
-                                    params[key] = algorithms[(current_idx + 1) % len(algorithms)]
+                                    idx = algorithms.index(params[key])
+                                    params[key] = algorithms[(idx + 1) % len(algorithms)]
                                 else:
-                                    # Incrementar ou decrementar o valor dos parâmetros numéricos
-                                    steps = {
+                                    step, min_val, max_val = {
                                         "min_per_table": (1, 1, 20),
                                         "max_per_table": (1, 1, 20),
                                         "initial_temperature": (10, 10, 1000),
                                         "cooling_rate": (0.005, 0.01, 1.0),
                                         "iterations": (100, 100, 10000),
-                                        "mutation_rate": (0.01, 0.01, 1.0), 
-                                        "population_size": (10, 10, 500),  
-                                    }
-                                    step, min_val, max_val = steps[key]
+                                        "mutation_rate": (0.01, 0.01, 1.0),
+                                        "population_size": (10, 10, 500),
+                                    }[key]
                                     new_value = round(params[key] + (operation * step), 3)
                                     params[key] = max(min(new_value, max_val), min_val)
+
     # Atualiza o ecrã
     pygame.display.flip()
 

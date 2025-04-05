@@ -59,17 +59,23 @@ def draw_parameter_selection(screen, font, params, selected_index):
     # Define os parâmetros por algoritmo
     algorithm_parameters = {
         "Simulated Annealing": [
-            ("Initial Temperature", "initial_temperature", 1, 1000),
+            ("Min per Table", "min_per_table", 1, 10),
+            ("Max per Table", "max_per_table", 1, 10),
+            ("Initial Temp", "initial_temperature", 1, 1000),
             ("Cooling Rate", "cooling_rate", 0.01, 1.0),
             ("Iterations", "iterations", 100, 10000),
             ("Cooling Type", "cooling_type", None, None),
         ],
         "Genetic Algorithm": [
+            ("Min per Table", "min_per_table", 1, 10),
+            ("Max per Table", "max_per_table", 1, 10),
             ("Population Size", "population_size", 10, 500),
-            ("Generations", "iterations", 100, 10000),
             ("Mutation Rate", "mutation_rate", 0.01, 1.0),
+            ("Generations", "iterations", 100, 10000),
         ],
         "Hill Climbing": [
+        ("Min per Table", "min_per_table", 1, 10),
+        ("Max per Table", "max_per_table", 1, 10),
         ("Iterations", "iterations", 100, 10000)
         ]
     }
@@ -77,7 +83,7 @@ def draw_parameter_selection(screen, font, params, selected_index):
     # Algorithm selector
     algorithm_label = font.render("Algorithm:", True, (0, 0, 0))
     screen.blit(algorithm_label, (50, y))
-    algorithm_rect = pygame.Rect(250, y, 200, 30)
+    algorithm_rect = pygame.Rect(250, y, 210, 30)
     pygame.draw.rect(screen, (255, 255, 255), algorithm_rect)
     pygame.draw.rect(screen, (0, 0, 0), algorithm_rect, 2)
     algorithm_text = font.render(params["algorithm"], True, (0, 0, 0))

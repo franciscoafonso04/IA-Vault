@@ -207,13 +207,17 @@ def draw_table(screen, data, font, row_height, col_widths):
 
         y_offset += row_height
 
-    # Botão "Back"
-    back_button = pygame.draw.rect(screen, (255, 59, 48), (10, screen.get_height() - 60, 100, 40), border_radius=10)
-    screen.blit(font.render('Back', True, (255, 255, 255)), back_button.move(25, 5))
+   # Botão "Back"
+    back_button = pygame.Rect(10, screen.get_height() - 60, 100, 40)
+    pygame.draw.rect(screen, (200, 0, 0), back_button, border_radius=10)
+    back_text = font.render('Back', True, (255, 255, 255))
+    screen.blit(back_text, back_text.get_rect(center=back_button.center))
 
     # Botão "Add Guest"
-    add_button = pygame.draw.rect(screen, (76, 175, 80), (screen.get_width() - 110, screen.get_height() - 60, 100, 40), border_radius=10)
-    screen.blit(font.render('Add Guest', True, (255, 255, 255)), add_button.move(5, 5))
+    add_button = pygame.Rect(screen.get_width() - 130, screen.get_height() - 60, 120, 40)
+    pygame.draw.rect(screen, (33, 150, 243), add_button, border_radius=10)
+    add_text = font.render('Add Guest', True, (255, 255, 255))
+    screen.blit(add_text, add_text.get_rect(center=add_button.center))
 
     return back_button, add_button
 
@@ -247,12 +251,18 @@ def draw_add_guest_menu(screen, font, new_name, selected_prefers, selected_avoid
         guest_buttons.append((rect, name))
         y_offset += 40
 
-    # Botões
-    save_button = pygame.draw.rect(screen, (33, 150, 243), (100, height - 60, 120, 40), border_radius=10)
-    screen.blit(font.render("Save", True, (255, 255, 255)), save_button.move(30, 5))
+   # Botão Save
+    save_button = pygame.Rect(100, height - 60, 120, 40)
+    pygame.draw.rect(screen, (33, 150, 243), save_button, border_radius=10)
+    save_text = font.render("Save", True, (255, 255, 255))
+    screen.blit(save_text, save_text.get_rect(center=save_button.center))
 
-    cancel_button = pygame.draw.rect(screen, (200, 0, 0), (width - 220, height - 60, 120, 40), border_radius=10)
-    screen.blit(font.render("Cancel", True, (255, 255, 255)), cancel_button.move(20, 5))
+    # Botão Cancel
+    cancel_button = pygame.Rect(width - 220, height - 60, 120, 40)
+    pygame.draw.rect(screen, (200, 0, 0), cancel_button, border_radius=10)
+    cancel_text = font.render("Cancel", True, (255, 255, 255))
+    screen.blit(cancel_text, cancel_text.get_rect(center=cancel_button.center))
+
 
     return input_box, guest_buttons, save_button, cancel_button
 
@@ -404,7 +414,7 @@ def draw_seating_arrangement(screen, tables, font, score=None, guests=None):
         y_offset += 30 + len(table) * 25 + 20
     
     # Draw and return back button
-    back_button = pygame.draw.rect(screen, (255, 99, 71), (10, screen.get_height() - 60, 100, 40), border_radius=10)
+    back_button = pygame.draw.rect(screen, (200, 0, 0), (10, screen.get_height() - 60, 100, 40), border_radius=10)
     text = font.render('Back', True, (255, 255, 255))
     text_rect = text.get_rect(center=(10 + 100 // 2, screen.get_height() - 40))
     screen.blit(text, text_rect)

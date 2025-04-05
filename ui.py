@@ -126,11 +126,14 @@ def draw_parameter_selection(screen, font, params, selected_index):
     # Draw navigation buttons
     back_button = pygame.draw.rect(screen, (255, 99, 71), (50, y + 20, 100, 40))
     start_button = pygame.draw.rect(screen, (50, 205, 50), (screen.get_width() - 150, y + 20, 100, 40))
+    benchmark_button = pygame.draw.rect(screen, (255, 215, 0), (screen.get_width() // 2 - 50, y + 20, 120, 40))
 
     screen.blit(font.render("Back", True, (255, 255, 255)), (70, y + 30))
     screen.blit(font.render("Start", True, (255, 255, 255)), (screen.get_width() - 130, y + 30))
+    screen.blit(font.render("Benchmark", True, (0, 0, 0)), (screen.get_width() // 2 - 35, y + 30))
 
-    return buttons, back_button, start_button
+
+    return buttons, back_button, start_button, benchmark_button
 
 
 # Função para desenhar a tabela no Pygame

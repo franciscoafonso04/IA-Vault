@@ -2,7 +2,6 @@ import pygame
 import file_handler
 import seater
 import ui
-import os
 
 pygame.init()
 
@@ -30,7 +29,6 @@ params = {
 }
 
 guests = file_handler.read_guest_preferences("guest_list.csv")
-
 tables = seater.create_balanced_seating(guests, params["min_per_table"], params["max_per_table"])  
 current_score = None
 
@@ -50,7 +48,7 @@ while running:
         back_button, retry_button = ui.draw_seating_arrangement(screen, tables, font, score=current_score, guests=guests)
     elif state == PARAMETER_SELECTION:
         selected_index = 0
-        param_buttons, back_button, start_button = ui.draw_parameter_selection(screen, font, params, selected_index)
+        param_buttons, back_button, start_button, benchmark_button = ui.draw_parameter_selection(screen, font, params, selected_index)
 
     # Process events
     for event in pygame.event.get():
@@ -82,7 +80,6 @@ while running:
                         state = MENU
                     elif retry_button.collidepoint(mouse_pos):
                         try:
-                            output_folder = file_handler.generate_output_folder()
                             seater.validate_parameters(params, len(guests))
                             print("Retrying with parameters:", params)
                             if params["algorithm"] == "Simulated Annealing":
@@ -93,8 +90,7 @@ while running:
                                     iterations=params["iterations"],
                                     cooling_type=params["cooling_type"],
                                     min_per_table=params["min_per_table"],
-                                    max_per_table=params["max_per_table"],
-                                    output_folder=output_folder
+                                    max_per_table=params["max_per_table"]
                                 )
                             elif params["algorithm"] == "CNF + WalkSAT":
                                 tables = seater.cnf_walksat(
@@ -124,8 +120,7 @@ while running:
                             
                             # Save the seating arrangement with metrics
                             file_handler.write_seating_arrangement(
-                                tables,
-                                filename= os.path.join(output_folder, "seating.txt"),
+                                tables, 
                                 current_score=current_score,
                                 perfect_score=perfect_score,
                                 optimality=optimality,
@@ -137,11 +132,18 @@ while running:
                 elif state == PARAMETER_SELECTION:
                     if back_button.collidepoint(mouse_pos):
                         state = MENU
+                    elif benchmark_button.collidepoint(mouse_pos):
+                        print("Benchmarking in progress...")
+                        try:
+                            seater.validate_parameters(params, len(guests))
+                            from benchmark import run_benchmark  # se colocares isto num ficheiro benchmark.py
+                            run_benchmark(guests, params, n_runs=10)
+                        except Exception as e:
+                            print(f"Benchmark error: {e}")
                     elif start_button.collidepoint(mouse_pos):
                         try:
                             seater.validate_parameters(params, len(guests))
                             print("Starting with parameters:", params)
-                            output_folder = file_handler.generate_output_folder()
                             if params["algorithm"] == "Simulated Annealing":
                                 tables = seater.simulated_annealing(
                                     guests=guests, 
@@ -150,8 +152,7 @@ while running:
                                     iterations=params["iterations"],
                                     cooling_type=params["cooling_type"],
                                     min_per_table=params["min_per_table"],
-                                    max_per_table=params["max_per_table"],
-                                    output_folder= output_folder
+                                    max_per_table=params["max_per_table"]
                                 )
                             elif params["algorithm"] == "CNF + WalkSAT":
                                 tables = seater.cnf_walksat(
@@ -179,11 +180,10 @@ while running:
                             # Save the seating arrangement with metrics
                             file_handler.write_seating_arrangement(
                                 tables, 
-                                filename=os.path.join(output_folder, "seating.txt"),
                                 current_score=current_score,
                                 perfect_score=perfect_score,
                                 optimality=optimality,
-                                algorithm=params["algorithm"]
+                                algorithm=params["algorithm"]  # Add this line
                             )
                             state = VIEW_SEATING
                         except Exception as e:

@@ -376,53 +376,62 @@ def simulated_annealing(guests, initial_temperature, cooling_rate, iterations, m
 
 def genetic_algorithm(guests, min_per_table, max_per_table, population_size=10, generations=1000, mutation_rate=0.01):
     
+    # -----------------------------------------------------
+    # Criação da população inicial com disposições válidas
+    # -----------------------------------------------------
     def create_initial_population():
-        """Creates an initial population of balanced table arrangements."""
         population = []
         for _ in range(population_size):
             tables = create_balanced_seating(guests, min_per_table, max_per_table)
             all_guests = [guest for table in tables for guest in table]
+
+            # Validação: garantir que não há convidados repetidos
             if len(all_guests) != len(set(all_guests)):
-                raise ValueError("Duplicate guests detected in initial population!")
+                raise ValueError("Convidados duplicados!")
             population.append(tables)
         return population
     
+    # -----------------------------------------------------
+    # Seleção dos pais via torneio (Tournament Selection)
+    # Escolhe os dois melhores de um subconjunto aleatório
+    # -----------------------------------------------------
     def select_parents(population):
-        """Selects two parents using tournament selection."""
-        tournament_size = min(10, len(population))  # Ensure tournament size is not larger than the population
-        tournament = random.sample(population, tournament_size)
-        tournament.sort(key=lambda x: calculate_cost(x, guests))  # Sort by cost
-        return tournament[0], tournament[1]  # Pick best two
-
+        tournament_size = min(10, len(population))                  # Assegura que o tamanho do torneio não exceda a população
+        tournament = random.sample(population, tournament_size)     # Seleciona aleatoriamente um subconjunto
+        tournament.sort(key=lambda x: calculate_cost(x, guests))    # Ordena pelo custo
+        return tournament[0], tournament[1]                         # Seleciona os dois melhores
     
+    # -----------------------------------------------------
+    # Crossover: gera um filho combinando duas soluções
+    # Combina mesas dos pais evitando convidados repetidos
+    # -----------------------------------------------------
     def crossover(parent1, parent2):
-        """Performs crossover between two parents to generate a child."""
         child = []
         used_guests = set()
 
-        # Combine tables from both parents while avoiding duplicates
+        # Combina mesas de ambos os pais (sem repetições)
         for table1, table2 in zip(parent1, parent2):
             combined_table = []
             for guest in table1 + table2:
                 if guest not in used_guests:
-                    combined_table.append(guest)
-                    used_guests.add(guest)
+                    combined_table.append(guest)    # Adiciona o convidado se não estiver repetido
+                    used_guests.add(guest)          # Marca como usado
             child.append(combined_table)
 
-        # Redistribute guests to balance tables
+        # Verifica se há convidados por atribuir e adiciona
         all_guests = set(guest for table in parent1 + parent2 for guest in table)
         missing_guests = all_guests - used_guests
 
-        # Flatten child tables and redistribute guests
+        # Flatten da solução e redistribuição balanceada
         flattened_child = [guest for table in child for guest in table]
         flattened_child.extend(missing_guests)
 
-        # Calculate the number of tables needed
-        num_tables = len(parent1)  # Assume the number of tables is the same as the parents
-        avg_table_size = len(flattened_child) // num_tables
+        # Calcula o tamanho necessário para cada mesa
+        num_tables = len(parent1)                               # Assume o mesmo número de mesas que os pais
+        avg_table_size = len(flattened_child) // num_tables     
         extra_guests = len(flattened_child) % num_tables
 
-        # Create balanced tables
+        # Cria mesas balanceadas
         child = []
         start_idx = 0
         for i in range(num_tables):
@@ -431,42 +440,44 @@ def genetic_algorithm(guests, min_per_table, max_per_table, population_size=10, 
             child.append(table)
             start_idx += table_size
 
-        # Validate the child
+        # Validação do filho: todos os convidados presentes, sem duplicados
         all_guests_in_child = [guest for table in child for guest in table]
         if len(all_guests_in_child) != len(all_guests) or len(all_guests_in_child) != len(set(all_guests_in_child)):
-            print("Debug: Parent 1:", parent1)
-            print("Debug: Parent 2:", parent2)
-            print("Debug: Child:", child)
-            print("Debug: Missing Guests:", missing_guests)
-            raise ValueError("Crossover produced an invalid child: Missing or duplicate guests!")
+            raise ValueError("Crossover produziu um filho inválido!")
 
         return child
 
-    
+    # -----------------------------------------------------
+    # Mutação: troca dois convidados aleatórios entre mesas
+    # Ajuda a diversificar a população e escapar de mínimos
+    # -----------------------------------------------------
     def mutate(individual):
-        """Applies mutation to an individual to introduce diversity."""
-        max_retries = 10  # Limit the number of retries to avoid infinite loops
+        
+        max_retries = 10  # Limita o número de tentativas para evitar loops infinitos
         for _ in range(max_retries):
-            # Select two random tables
+            # Seleciona duas mesas aleatórias
             table1, table2 = random.sample(individual, 2)
 
-            # Swap two random guests between the tables
+            # Troca dois convidados entre as mesas
             if table1 and table2:
                 guest1 = random.choice(table1)
                 guest2 = random.choice(table2)
                 table1[table1.index(guest1)], table2[table2.index(guest2)] = guest2, guest1
 
-            # Ensure no duplicates across all tables
+            # Assegura que a mutação não cria duplicatas
             all_guests = [guest for table in individual for guest in table]
             if len(all_guests) == len(set(all_guests)):
-                return individual  # Return the valid individual if no duplicates are found
+                return individual  # Retorna o indivíduo mutado se válido
 
-        # If retries are exhausted, return the original individual without mutation
+        # Se tentativas falharem, retorna o indivíduo original
         print("Warning: Mutation failed to produce a valid individual after retries.")
         return individual
     
+    # -----------------------------------------------------
+    # Validação da população: todos os convidados e únicos
+    # -----------------------------------------------------
     def validate_population(population, guests):
-        """Ensures that all individuals in the population are valid."""
+        
         for individual in population:
             all_guests = [guest for table in individual for guest in table]
             if len(all_guests) != len(guests):
@@ -474,63 +485,69 @@ def genetic_algorithm(guests, min_per_table, max_per_table, population_size=10, 
             if len(all_guests) != len(set(all_guests)):
                 raise ValueError("Population contains an invalid individual: Duplicate guests!")
 
- 
+    # -------------------------
+    # Etapa 1: inicialização
+    # -------------------------
     population = create_initial_population()
     validate_population(population, guests)
 
+    # -------------------------
+    # Etapa 2: evolução
+    # -------------------------
     for generation in range(generations):
         new_population = []
 
-        # Generate children through crossover and mutation
+        # Geração de filhos
         for _ in range(population_size // 2):
             parent1, parent2 = select_parents(population)
             child1, child2 = crossover(parent1, parent2), crossover(parent2, parent1)
             new_population.extend([mutate(child1), mutate(child2)])
 
-        # Keep the best individuals (elitism)
+        # Elitismo: preserva os melhores da geração atual
         elite_size = 5  # Number of best individuals to carry over
         elites = sorted(population, key=lambda x: calculate_cost(x, guests))[:elite_size]
 
-        # Combine elites with the new population
+        # Combina elites e novos filhos
         combined_population = elites + new_population
 
-        # Select the top individuals to form the next generation
+        # Seleciona os melhores para a próxima geração
         population = sorted(combined_population, key=lambda x: calculate_cost(x, guests))[:population_size]
-
-        # Validate the population
         validate_population(population, guests)
 
-        # Debugging information
+        # Print debug ocasionalmente
         if generation % 100 == 0:
-            print(f"Generation {generation}: Best cost = {calculate_cost(population[0], guests)}")
-            print(f"Population diversity: {len(set(tuple(tuple(table) for table in individual) for individual in population))} unique individuals")
+            print(f"Geracão {generation}: Melhor custo = {calculate_cost(population[0], guests)}")
+            print(f"Diversidade da Populacão: {len(set(tuple(tuple(table) for table in individual) for individual in population))} indivíduos únicos")
 
-    # Return the best solution
+    # -------------------------
+    # Etapa 3: resultado final
+    # -------------------------
     best_tables = min(population, key=lambda x: calculate_cost(x, guests))
     print(f"Best tables found: Cost = {calculate_cost(best_tables, guests)}")
     return best_tables
 
+# ========================================================================================================================================================
+# Função: hill_climbing
+# Descrição: Algoritmo ganancioso. Aceita apenas vizinhos que melhoram o custo.
+# Útil como baseline para comparação com heurísticas mais avançadas.
+# ========================================================================================================================================================
 def hill_climbing(guests, min_per_table, max_per_table, iterations=500):
-    """
-    Algoritmo ganancioso (greedy): aceita apenas vizinhos com melhor custo.
-    Útil como baseline simples para comparação com metaheurísticas.
-    """
-
-    current = create_balanced_seating(guests, min_per_table, max_per_table)
-    current_cost = calculate_cost(current, guests)
-    best = copy.deepcopy(current)
-    best_cost = current_cost
+    
+    current = create_balanced_seating(guests, min_per_table, max_per_table)     # Cria uma disposição inicial
+    current_cost = calculate_cost(current, guests)                              # Calcula o custo inicial   
+    best = copy.deepcopy(current)                                               # Guarda a melhor disposição
+    best_cost = current_cost                                                    # Guarda o melhor custo 
 
     for _ in range(iterations):
-        neighbor = create_neighbor(current, min_per_table, max_per_table)
-        neighbor_cost = calculate_cost(neighbor, guests)
+        neighbor = create_neighbor(current, min_per_table, max_per_table)       # Gera um vizinho
+        neighbor_cost = calculate_cost(neighbor, guests)                        # Calcula o custo do vizinho
 
-        if neighbor_cost < current_cost:
+        if neighbor_cost < current_cost:                                        # Aceita o vizinho se o custo for melhor
             current = neighbor
             current_cost = neighbor_cost
 
-            if neighbor_cost < best_cost:
-                best = copy.deepcopy(neighbor)
-                best_cost = neighbor_cost
+            if neighbor_cost < best_cost:                                       # Atualiza a melhor disposição se o custo for melhor
+                best = copy.deepcopy(neighbor)                                  
+                best_cost = neighbor_cost                                       
 
-    return best
+    return best                 

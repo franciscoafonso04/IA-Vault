@@ -3,6 +3,7 @@ import math
 import copy
 from datetime import datetime
 import plotting
+import file_handler
 
 def calculate_cost(tables, guests):
     """
@@ -193,7 +194,7 @@ def validate_parameters(params, num_guests):
     if params["cooling_type"] not in ["exponential", "linear", "logarithmic"]:
         raise ValueError("cooling_type must be 'exponential', 'linear', or 'logarithmic'.")
     
-def simulated_annealing(guests, initial_temperature, cooling_rate, iterations, min_per_table, max_per_table, cooling_type):
+def simulated_annealing(guests, initial_temperature, cooling_rate, iterations, min_per_table, max_per_table, cooling_type, output_folder=None):
     """Apply simulated annealing to find an optimal seating arrangement."""
     
     # Initialize metrics collection
@@ -248,8 +249,10 @@ def simulated_annealing(guests, initial_temperature, cooling_rate, iterations, m
         if temperature < 0.01:
             break
     
-    # Plot performance metrics
-    plotting.plot_performance_metrics(metrics)
+    if output_folder:
+        plotting.plot_performance_metrics(metrics, save_dir=output_folder)
+    else:
+        plotting.plot_performance_metrics(metrics)
     
     # Print final results
     final_sizes = [len(table) for table in best_tables]

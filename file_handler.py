@@ -19,20 +19,20 @@ def read_guest_preferences(filename):
     
     return guests
 
-def generate_arrangement_filename(extension='.txt'):
-    """Generate a unique filename for each arrangement"""
+def generate_output_folder():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"arrangement_{timestamp}{extension}"
-    return os.path.join("results", filename)
+    folder = os.path.join("results", f"arrangement_{timestamp}")
+    os.makedirs(folder, exist_ok=True)
+    return folder
 
 def write_seating_arrangement(tables, filename=None, current_score=None, perfect_score=None, optimality=None, algorithm=None):
     if filename is None:
         # Create results directory if it doesn't exist
         os.makedirs("results", exist_ok=True)
         
-        # Write both TXT and CSV versions
-        txt_filename = generate_arrangement_filename('.txt')
-        csv_filename = generate_arrangement_filename('.csv')
+        folder = generate_output_folder()
+        txt_filename = os.path.join(folder, "seating.txt")
+        csv_filename = os.path.join(folder, "seating.csv")
         
         # Write TXT format
         with open(txt_filename, 'w', encoding='utf-8') as txtfile:
@@ -80,7 +80,7 @@ def write_seating_arrangement(tables, filename=None, current_score=None, perfect
             for i, table in enumerate(tables, 1):
                 writer.writerow([f'Table {i}', ', '.join(table)])
                 
-        return txt_filename  # Return the txt filename for compatibility
+        return folder # Return the txt filename for compatibility
     else:
         # If filename is provided, use the old CSV-only format
         with open(filename, 'w', newline='', encoding='utf-8') as csvfile:

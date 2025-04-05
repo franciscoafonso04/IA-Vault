@@ -158,8 +158,10 @@ while running:
                                 tables = seater.genetic_algorithm(
                                     guests=guests,
                                     min_per_table=params["min_per_table"],
-                                    generations=params["iterations"],
                                     max_per_table=params["max_per_table"],
+                                    population_size=params["population_size"],
+                                    generations=params["iterations"],
+                                    mutation_rate=params["mutation_rate"],
                                     output_folder=output_folder
                                 )
                             elif params["algorithm"] == "Hill Climbing":
@@ -223,8 +225,10 @@ while running:
                                 tables = seater.genetic_algorithm(
                                     guests=guests,
                                     min_per_table=params["min_per_table"],
-                                    generations=params["iterations"],
                                     max_per_table=params["max_per_table"],
+                                    population_size=params["population_size"],
+                                    generations=params["iterations"],
+                                    mutation_rate=params["mutation_rate"],
                                     output_folder=output_folder
                                 )
                             elif params["algorithm"] == "Hill Climbing":

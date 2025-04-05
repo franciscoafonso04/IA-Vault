@@ -373,7 +373,7 @@ def simulated_annealing(guests, initial_temperature, cooling_rate, iterations, m
 # Requer tuning para resultados mais estáveis.
 # ========================================================================================================================================================
 
-def genetic_algorithm(guests, min_per_table, max_per_table, population_size=10, generations=1000, mutation_rate=0.01, output_folder=None):
+def genetic_algorithm(guests, min_per_table, max_per_table, population_size, generations, mutation_rate, output_folder=None):
     
     # -----------------------------------------------------
     # Criação da população inicial com disposições válidas

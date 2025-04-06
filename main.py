@@ -28,14 +28,14 @@ input_active = False
 
 # Parâmetros iniciais (default) do algoritmo
 params = {
-    "min_per_table": 2,
+    "min_per_table": 3,
     "max_per_table": 8,
-    "initial_temperature": 100,
+    "initial_temperature": 200,
     "cooling_rate": 0.98,
-    "iterations": 1000,
+    "iterations": 2000,
     "mutation_rate": 0.01,
     "population_size": 50,
-    "cooling_type": "logarithmic",  # Tipo de arrefecimento por default
+    "cooling_type": "exponential",  # Tipo de arrefecimento por default
     "algorithm": "Simulated Annealing"  # Algoritmo selecionado por default
 }
 

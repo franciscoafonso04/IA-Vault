@@ -71,7 +71,7 @@ Each guest may specify people they would like to sit with (`Together`) or avoid 
 
 3. Run the program:
    ```
-   python main.py
+   python3 main.py
    ```
 
 ## 📊 Example Outputs

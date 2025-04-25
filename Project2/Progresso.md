@@ -18,6 +18,8 @@ Academic Pressure, CGPA, Study Satisfaction → só têm ~27k valores
 
 Profession, Work Pressure, Job Satisfaction → também têm bastantes valores ausentes
 
+--- 
+
 Valores nulos (top 10 colunas com mais missing):
 
 Study Satisfaction - 112.803

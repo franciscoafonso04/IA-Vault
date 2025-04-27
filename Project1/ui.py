@@ -1,5 +1,5 @@
 import pygame
-import seater
+import Project1.seater as seater
 
 # Variáveis globais relacionadas a scrolling
 SCROLL_SPEED = 15

@@ -2,7 +2,7 @@ import random
 import math
 import copy
 from datetime import datetime
-import plotting
+import Project1.plotting as plotting
 
 # ============================================================================================================================================================
 # Função: calculate_cost

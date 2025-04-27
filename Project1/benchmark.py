@@ -1,8 +1,8 @@
 import os
 import matplotlib.pyplot as plt
 from datetime import datetime
-import seater
-import file_handler
+import Project1.seater as seater
+import Project1.file_handler as file_handler
 
 def run_benchmark(guests, params, algorithm, n_runs=10, benchmark_folder=None):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

@@ -1,82 +1,26 @@
-# Projeto de Inteligência Artificial — Exploring Mental Health Data
+# 📘 Projeto IART 2 – Mental Health Classification
 
-## 1. Definição do Problema
-- **Objetivo:** Prever se uma pessoa sofre de depressão.
-- **Tipo de problema:** Classificação binária.
-- **Variável alvo (target):** `Depression` (0 = Não, 1 = Sim).
+Este repositório contém a submissão para o segundo trabalho de IART (2024/25), cujo objetivo foi treinar e avaliar modelos de aprendizagem automática para prever sintomas de depressão com base em dados pessoais, académicos e de estilo de vida.
 
-## 2. Descrição do Dataset
-- Dados relacionados com fatores acadêmicos, profissionais, estresse financeiro, hábitos de sono e alimentação.
-- **Variáveis numéricas:**
-  - Age
-  - Academic Pressure
-  - Work Pressure
-  - CGPA
-  - Study Satisfaction
-  - Job Satisfaction
-  - Work/Study Hours
-  - Financial Stress
-- **Variáveis categóricas:**
-  - Gender
-  - City
-  - Profession
-  - Degree
-  - Sleep Duration
-  - Dietary Habits, entre outras.
+## 📂 Ficheiros incluídos
 
-## 3. Principais Observações da Análise Exploratória
-- **Missing values:**
-  - Muitas colunas com valores ausentes significativos (`Study Satisfaction`, `Academic Pressure`, `CGPA`).
-- **Correlações:**
-  - `Financial Stress` apresenta uma correlação positiva moderada (~0.31) com `Depression`.
-  - `Academic Pressure` e `Job Satisfaction` mostram correlações leves.
-- **Outliers:**
-  - Identificados em `Age`, `Work/Study Hours` e `CGPA`.
-- **Distribuição da variável alvo:**
-  - Leve desequilíbrio entre classes (0 e 1).
+- `mental_health_A2_77.ipynb` — Notebook completo com análise exploratória, treino, tuning e avaliação dos modelos.
+- `IART2.pdf` — Apresentação em formato PDF (máximo 10 slides).
+- `train.csv` — Conjunto de treino original.
+- `test.csv` — Conjunto de teste original.
+- `result.csv` — Resultado gerado com o modelo final (MLPClassifier Tuned).
 
-## 4. Pipeline de Machine Learning
-- **Carregamento e limpeza de dados:**
-  - Imputação de valores nulos (mediana para numéricos, moda para categóricos).
-  - Encoding das variáveis categóricas (Label Encoding).
-  - Normalização das variáveis numéricas (StandardScaler).
-- **Separar features e target:**
-  - Divisão em treino e teste (80/20).
+## ▶️ Como correr
 
-## 5. Modelos Aplicados
-- **Decision Tree Classifier**
-- **k-Nearest Neighbors (k-NN)**
-- **Support Vector Machine (SVM)**
+1. Abrir o notebook `mental_health_A2_77.ipynb` num ambiente como Jupyter Notebook ou VS Code.
+2. Certificar-se de que todos os ficheiros `.csv` estão no mesmo diretório do notebook.
+3. Correr todas as células sequencialmente:
+   - O notebook inclui o pré-processamento, treino, tuning e avaliação.
+   - A última secção aplica o modelo ao `test.csv` e gera o `result.csv`.
 
-## 6. Avaliação dos Modelos
-- **Métricas usadas:**
-  - Accuracy
-  - Precision
-  - Recall
-  - F1-Score
-  - Matriz de Confusão
-- **Análises adicionais (opcionais):**
-  - ROC Curves
-  - Learning Curves
+Não é necessário instalar bibliotecas adicionais para além das standard do `scikit-learn`, `pandas`, `numpy` e `matplotlib`.
 
-## 7. Tecnologias Utilizadas
-- Python 3
-- Pandas
-- NumPy
-- Scikit-learn
-- Matplotlib
-- Seaborn
+## 🔗 Dataset
 
-## 8. Execução do Projeto
-### Instalar dependências:
-```bash
-pip install pandas numpy matplotlib seaborn scikit-learn
-```
+O dataset foi obtido a partir da competição [Kaggle Playground Series – S4E11](https://www.kaggle.com/competitions/playground-series-s4e11).
 
-### Executar:
-- Abrir o ficheiro `projeto_mental_health.ipynb` num ambiente Jupyter Notebook.
-- Seguir as instruções célula a célula para reproduzir o projeto.
-
----
-
-_Projeto desenvolvido no âmbito da UC de Inteligência Artificial 2024/25._

@@ -50,6 +50,6 @@ To get started:
 
 1. Navigate to the project folder:
    ```bash
-   cd wedding-seater-planner
+   cd Project1
    # or
-   cd mental-health-classification
+   cd Project2

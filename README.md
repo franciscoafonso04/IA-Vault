@@ -9,7 +9,7 @@ one focuses on **optimization with metaheuristics**, and the other on **machine 
 
 ## 📁 Projects Overview
 
-### 💍 [Wedding Seater Planner](./wedding-seater-planner)
+### 💍 [Wedding Seater Planner](./Project1)
 
 📌 **Grade: 19.0/20**  
 An interactive optimization tool that uses **Simulated Annealing**, **Genetic Algorithm**, and **Hill Climbing** to generate optimal seating plans for wedding guests based on preferences and constraints.
@@ -22,11 +22,11 @@ Metaheuristics · Optimization · Pygame · Benchmarking · Visualization
 - Visualization of seating plans and performance metrics
 - Benchmark mode with algorithm comparison
 
-📂 Folder: `wedding-seater-planner/`
+📂 Folder: `Project1/`
 
 ---
 
-### 🧠 [Mental Health Classification](./mental-health-classification)
+### 🧠 [Mental Health Classification](./Project2)
 
 📌 **Grade: 18.0/20**  
 A machine learning pipeline to predict depression symptoms using demographic, academic, and lifestyle data. Developed and evaluated in Jupyter Notebook with multiple models and tuning strategies.
@@ -39,7 +39,7 @@ MLPClassifier · Random Forest · Feature Selection · F1 Score · Kaggle Datase
 - Multiple ML models tested and compared
 - Export of final predictions to CSV
 
-📂 Folder: `mental-health-classification/`
+📂 Folder: `Project2/`
 
 ---
 

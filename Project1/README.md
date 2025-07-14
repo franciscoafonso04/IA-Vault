@@ -1,84 +1,113 @@
-# 💍 Wedding Seater Planner - Group_A1_78
+# 💍 Wedding Seater Planner
 
 An interactive optimization tool to generate ideal seating arrangements for wedding guests, based on their preferences and constraints.
 
-## 📌 Project Overview
+📌 **Grade received: 19.0/20**
 
-This application uses metaheuristic algorithms to maximize guest satisfaction and ensure balanced tables. It includes a graphical interface built with Pygame, allowing users to:
+---
+
+## 📘 Project Overview
+
+This application was developed for the Artificial Intelligence and Reasoning Techniques (IART) course at FEUP (2024/25). It applies metaheuristic algorithms to optimize table assignments for wedding guests, ensuring satisfaction and balance based on their stated preferences.
+
+A graphical interface was built using **Pygame**, enabling users to:
 - Load a guest list with preferences.
-- Adjust algorithm parameters.
-- Visualize and retry seating arrangements.
-- Run benchmarks and compare algorithms.
+- Adjust algorithm parameters interactively.
+- Generate and retry seating plans.
+- Benchmark algorithms and visualize comparative performance.
+
+---
 
 ## 🧠 Implemented Algorithms
 
-- **Simulated Annealing** (main algorithm): explores the solution space using a probabilistic acceptance criterion.
-- **Genetic Algorithm**: evolves a population of seating plans through crossover and mutation.
-- **Hill Climbing**: a fast, greedy baseline that iteratively improves the solution.
+- **Simulated Annealing** — Main algorithm: explores the solution space using a probabilistic acceptance criterion based on temperature and cooling schedule.
+- **Genetic Algorithm** — Evolves a population of seating arrangements using crossover and mutation.
+- **Hill Climbing** — Fast and greedy baseline that iteratively improves the seating configuration.
 
-## 📈 Features
+---
+
+## 🎯 Features
 
 - **Seating Arrangement Generation**  
-  Generates optimized table assignments respecting guest preferences and balance constraints.
+  Optimizes guest distribution across tables while satisfying preference constraints.
 
-- **Parameter Adjustment**  
-  User-friendly menu to configure algorithm-specific parameters.
+- **Interactive Parameter Adjustment**  
+  Easily configurable algorithm parameters through a Pygame-based menu.
 
 - **Benchmarking Mode**  
-  Runs the selected algorithm multiple times (default: 10), saving all outputs and generating performance plots.
+  Executes an algorithm multiple times (default: 10), storing outputs and generating performance plots.
 
 - **Algorithm Comparison**  
-  Executes and compares different algorithms via boxplots and summary metrics.
+  Automatically runs all algorithms and visualizes their results with boxplots and metrics.
 
-- **Visual Output**  
-  Each result includes `.txt` seating files and performance graphs (PNG).
+- **Graphical Visualization**  
+  Real-time seating layouts and performance graphs generated using Matplotlib.
 
-## 🗂 File Structure
+---
+
+## 📁 Files Included
 
 ```
-📁 results/
-📁 benchmarks/
-📁 comparisons/
-guest_list.csv         # Input guest list
-main.py                # Main Pygame interface
-seater.py              # All algorithms and utilities
-ui.py                  # Drawing functions for interface
-file_handler.py        # File I/O and folder management
-plotting.py            # Plot generation (matplotlib)
-benchmark.py           # Benchmark and Comparison Functions
+
+📁 results/           # Individual seating outputs
+📁 benchmarks/        # Benchmark runs
+📁 comparisons/       # Algorithm comparison results
+guest\_list.csv        # Input guest list (CSV format)
+main.py               # Main Pygame interface
+seater.py             # Metaheuristic algorithm implementations
+ui.py                 # Drawing and UI logic
+file\_handler.py       # File I/O and folder management
+plotting.py           # Matplotlib graph generation
+benchmark.py          # Benchmark and comparison logic
+
 ```
+
+---
 
 ## 📥 Input Format
 
-The guest list must be in `.csv` format with the following structure:
+The input file must be a `.csv` with the following structure:
 
 ```
 Guest,Together1,Together2,Together3,Apart1,Apart2,Apart3
 Alice,Bob,Charlie,David,Eve,Frank,Grace
 ...
-```
+````
 
-Each guest may specify people they would like to sit with (`Together`) or avoid (`Apart`).
+Each guest may list other guests they want to sit **together** with or **apart** from. These preferences are used to calculate a fitness score for each arrangement.
 
-## 🧪 Running the Program
+---
 
-1. Make sure you have Python 3 and the required libraries:
-   ```
+## ▶️ How to Run
+
+1. Ensure Python 3 and the required libraries are installed:
+
+   ```bash
    pip install pygame matplotlib
-   ```
-
-2. Place your guest list CSV in the root folder and name it `guest_list.csv`, or edit the current one. Note: You can also add guests through the program interface by going to "View Preferences Table" and then clicking the button "Add Guest".
+  
+2. Place your guest list in the project root and name it `guest_list.csv`, or use the graphical interface to add/edit guests.
 
 3. Run the program:
-   ```
+
+   ```bash
    python3 main.py
    ```
 
-## 📊 Example Outputs
+---
 
-- **Seating Plan:** `seating.txt`
-- **Simulated Annealing Performance:** `performance.png`
-- **Benchmark Boxplot:** `boxplot.png`
-- **Comparison Plot:** `comparison_boxplot.png`
+## 📊 Output Examples
 
+* **Optimized Seating Plan** → `seating.txt`
+* **Algorithm Performance Graph** → `performance.png`
+* **Benchmark Result (Boxplot)** → `boxplot.png`
+* **Comparison Plot Across Algorithms** → `comparison_boxplot.png`
 
+---
+
+## ✍️ Authors
+
+* Francisco Afonso (up202208115)
+* Miguel Caseira (up202207678)
+* Pedro Santoos (up202205900) 
+
+---
